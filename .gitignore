@@ -11,3 +11,4 @@
 .DS_Store
 .db
 *.zip
+*.yy.c
