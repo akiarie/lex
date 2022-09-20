@@ -25,6 +25,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+#define OUTPUT_FILE "lex.yy.c"
 
 /* read_file: reads contents of file and returns them
  * caller must free returned string 
@@ -43,32 +46,87 @@ read_file(char *path)
     return str;
 }
 
-/* write_file: write value to file (and create if nonexistent) */
-void 
-write_file(char *path, char *value) 
+bool
+isletter(char c)
 {
-    FILE *f = fopen(path, "w");
-    if (f == NULL) {
-        perror("error writing to file");
-        exit(1);
-    }
-    fprintf(f, "%s", value);
-    fclose(f);
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+bool
+seekdeclr(char *in)
+{
+	bool newline = false;
+	while (true) {
+		switch (in[0]) {
+		case '\0':
+			fprintf(stderr, "file ended in declarations section");
+			exit(1);
+		case '\n':
+			newline = true;
+			in++;
+			continue;
+		case '\t': case ' ':
+			in++;
+			continue;
+		}
+		if (isletter(in[0])) {
+			if (!newline) {
+				fprintf(stderr, "declaration cannot come before newline");
+				exit(1);
+			}
+			return true;
+		}
+		fprintf(stderr, "unknown char '%c' in declaration section", in[0]);
+		exit(1);
+	}
 }
 
 void
-declarations (char *file)
+decl(char *in, FILE *out)
 {
-	/* ignore ws until %{ */
-	for (; *file != '\0'; file++) {
-		if (*file == '%') {
-			file++;
-			break;
+	char *name = in;
+	in++; /* first char must be letter */
+	while (isletter(in[0])) {
+		in++;
+	}
+}
+
+void
+declproper(char *in, FILE *out)
+{
+	while (true) {
+		seekdeclr(in);
+		decl(in, out);
+	}
+}
+
+
+void 
+declarations(char *in, FILE *out)
+{
+	if (in[0] != '%' || in[1] != '{') {
+		fprintf(stderr, "declaration section must begin with constants");
+		exit(1);
+	}
+	in += 2;
+	while (in[0] != '\0') {
+		if (in[0] == '%' && in[1] == '}') {
+			in += 2;
+			declproper(in, out);
+			return;
 		}
+		fprintf(out, "%c", in[0]);
+		in++;
 	}
-	if (*file != '{') {
-		// failure
-	}
+	fprintf(stderr, "declaration section ended without close of constants");
+	exit(1);
+
+}
+
+void
+transform(char *in, FILE *out)
+{
+	declarations(in, out);
 }
 
 
@@ -79,6 +137,17 @@ main(int argc, char *argv[])
 		fprintf(stderr, "must provide input as string\n");
 		return 1;
 	}
-	char* file = read_file(argv[1]);
-	free(file);
+
+	char* in = read_file(argv[1]);
+
+    FILE *out = fopen(OUTPUT_FILE, "w");
+    if (out == NULL) {
+        perror("error writing to file");
+        exit(1);
+    }
+
+	transform(in, out);
+
+    fclose(out);
+	free(in);
 }
