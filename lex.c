@@ -53,7 +53,7 @@ isletter(char c)
 }
 
 bool
-seekdeclr(char *in)
+decl_seek(char *in)
 {
 	bool newline = false;
 	while (true) {
@@ -82,7 +82,7 @@ seekdeclr(char *in)
 }
 
 void
-decl(char *in, FILE *out)
+decl_pattern_trans(char *in, FILE *out)
 {
 	char *name = in;
 	in++; /* first char must be letter */
@@ -92,41 +92,62 @@ decl(char *in, FILE *out)
 }
 
 void
-indecl(char *in, FILE *out)
+decl_proper_trans(char *in, FILE *out)
 {
 	while (true) {
-		seekdeclr(in);
-		decl(in, out);
+		decl_seek(in);
+		decl_pattern_trans(in, out);
 	}
 }
 
-void
-declarations(char *in, FILE *out)
+bool
+decl_constants_atstart(char *in)
 {
-	if (in[0] != '%' || in[1] != '{') {
-		fprintf(stderr, "declarations must begin with constants");
+	return in[0] == '%' && in[1] == '{';
+}
+
+
+bool
+decl_constants_atend(char *in)
+{
+	return in[0] == '%' && in[1] == '}';
+}
+
+void
+decl_constants_trans(char *in, FILE *out)
+{
+	if (!decl_constants_atstart(in)) {
+		fprintf(stderr, "constants section beginning with '%c%c'",
+			in[0], in[1]);
 		exit(1);
 	}
-	in += 2;
+	in += 2; // '%{'
 	while (in[0] != '\0') {
-		if (in[0] == '%' && in[1] == '}') {
-			in += 2;
-			indecl(in, out);
+		if (in[0] == '\0') {
+			fprintf(stderr, "constants section not closed");
+			exit(1);
+		}
+		if (decl_constants_atend(in)) {
+			in += 2; // '%}'
 			return;
 		}
 		fprintf(out, "%c", in[0]);
 		in++;
 	}
-	fprintf(stderr, "declaration section ended without close of constants");
-	exit(1);
+}
+
+void
+decl_trans(char *in, FILE *out)
+{
+	decl_constants_trans(in, out);
+	decl_proper_trans(in, out);
 }
 
 void
 transform(char *in, FILE *out)
 {
-	declarations(in, out);
+	decl_trans(in, out);
 }
-
 
 int
 main(int argc, char *argv[])
