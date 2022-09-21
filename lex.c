@@ -61,6 +61,8 @@ decl_atend(char *in)
 int
 decl_pattern_trans(char *in, FILE *out)
 {
+	fprintf(stderr, "first pattern: '%s'", in);
+	exit(1);
 	int n = 0;
 	char *name = in;
 	in++; /* first char must be letter */
@@ -123,7 +125,8 @@ decl_proper_trans(char *in, FILE *out)
 	char *pos = in;
 	struct seek_result r;
 	for (r = decl_seek(pos); r.success; r = decl_seek(pos)) {
-		pos += r.delta + decl_pattern_trans(pos, out);
+		pos += r.delta;
+		pos += decl_pattern_trans(pos, out);
 	}
 	return pos - in;
 }
