@@ -53,94 +53,129 @@ isletter(char c)
 }
 
 bool
-decl_seek(char *in)
+decl_atend(char *in)
 {
-	bool newline = false;
-	while (true) {
-		switch (in[0]) {
-			case '\0':
-				fprintf(stderr, "file ended in declarations section");
-				exit(1);
-			case '\n':
-				newline = true;
-				in++;
-				continue;
-			case '\t': case ' ':
-				in++;
-				continue;
-		}
-		if (isletter(in[0])) {
-			if (!newline) {
-				fprintf(stderr, "declaration cannot come before newline");
-				exit(1);
-			}
-			return true;
-		}
-		fprintf(stderr, "unknown char '%c' in declaration section", in[0]);
-		exit(1);
-	}
+	return in[0] == '%' && in[1] == '%';
 }
 
-void
+int
 decl_pattern_trans(char *in, FILE *out)
 {
+	int n = 0;
 	char *name = in;
 	in++; /* first char must be letter */
 	while (isletter(in[0])) {
 		in++;
 	}
+	return n;
 }
 
-void
+int
+decl_seeknewline(char *in)
+{
+	char *pos;
+	for (pos = in; pos[0] != '\n'; pos++) {
+		switch (pos[0]) {
+			case '\0':
+				fprintf(stderr, "ended in declarations");
+				exit(1);
+			case '\t': case ' ':
+				continue;
+		}
+		fprintf(stderr, "unknown char '%c' while seeking for newline",
+			pos[0]);
+		exit(1);
+	}
+	return pos - in;
+}
+
+struct seek_result {
+	bool success;
+	int delta;
+};
+
+struct seek_result
+decl_seek(char *in)
+{
+	char *pos = in;
+	pos += decl_seeknewline(pos); // newline must precede declaration
+	while (!isletter(pos[0])) {
+		if (decl_atend(in)) {
+			return (struct seek_result){false, pos - in};
+		}
+		switch (pos[0]) {
+			case '\0':
+				fprintf(stderr, "ended in declarations");
+				exit(1);
+			case '\n': case '\t': case ' ':
+				pos++;
+				continue;
+		}
+		fprintf(stderr, "unknown char '%s' in declarations", in);
+		exit(1);
+	}
+	return (struct seek_result){true, pos - in};
+}
+
+int
 decl_proper_trans(char *in, FILE *out)
 {
-	while (true) {
-		decl_seek(in);
-		decl_pattern_trans(in, out);
+	char *pos = in;
+	struct seek_result r;
+	for (r = decl_seek(pos); r.success; r = decl_seek(pos)) {
+		pos += r.delta + decl_pattern_trans(pos, out);
 	}
+	return pos - in;
 }
 
 bool
-decl_constants_atstart(char *in)
+decl_cons_atstart(char *in)
 {
 	return in[0] == '%' && in[1] == '{';
 }
 
 
 bool
-decl_constants_atend(char *in)
+decl_cons_atend(char *in)
 {
 	return in[0] == '%' && in[1] == '}';
 }
 
-void
-decl_constants_trans(char *in, FILE *out)
+int
+decl_cons_proper_trans(char *in, FILE *out)
 {
-	if (!decl_constants_atstart(in)) {
+	char *pos;
+	for (pos = in; !decl_cons_atend(pos); pos++) {
+		if (pos[0] == '\0') {
+			fprintf(stderr, "ended while outputting constants");
+			exit(1);
+		}
+		fprintf(out, "%c", pos[0]);
+	}
+	return pos - in;
+}
+
+int
+decl_cons_trans(char *in, FILE *out)
+{
+	if (!decl_cons_atstart(in)) {
 		fprintf(stderr, "constants section beginning with '%c%c'",
 			in[0], in[1]);
 		exit(1);
 	}
-	in += 2; // '%{'
-	while (in[0] != '\0') {
-		if (in[0] == '\0') {
-			fprintf(stderr, "constants section not closed");
-			exit(1);
-		}
-		if (decl_constants_atend(in)) {
-			in += 2; // '%}'
-			return;
-		}
-		fprintf(out, "%c", in[0]);
-		in++;
-	}
+	char *pos = in + 2; // '%{'
+	pos += decl_cons_proper_trans(pos, out);
+	pos += 2; // '%}'
+	return pos - in;
 }
 
-void
+int
 decl_trans(char *in, FILE *out)
 {
-	decl_constants_trans(in, out);
-	decl_proper_trans(in, out);
+	char *pos = in;
+	pos += decl_cons_trans(pos, out);
+	pos += decl_proper_trans(pos, out);
+	return pos - in;
 }
 
 void
