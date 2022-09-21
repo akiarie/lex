@@ -5,7 +5,7 @@
  * 		translation rules
  * 		%%
  * 		auxiliary functions
- * 
+ *
  * In the declarations section anything in the initial %{ }% is copied directly
  * to the output file, as well as the whole auxiliary functions section.
  *
@@ -30,20 +30,20 @@
 #define OUTPUT_FILE "lex.yy.c"
 
 /* read_file: reads contents of file and returns them
- * caller must free returned string 
+ * caller must free returned string
  * see https://stackoverflow.com/a/14002993 */
-char* 
+char*
 read_file(char *path)
 {
-    FILE *f = fopen(path, "rb");
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-    char *str = malloc(fsize + 1);
-    fread(str, fsize, 1, f);
-    fclose(f);
-    str[fsize] = '\0';
-    return str;
+	FILE *f = fopen(path, "rb");
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+	char *str = malloc(fsize + 1);
+	fread(str, fsize, 1, f);
+	fclose(f);
+	str[fsize] = '\0';
+	return str;
 }
 
 bool
@@ -58,16 +58,16 @@ seekdeclr(char *in)
 	bool newline = false;
 	while (true) {
 		switch (in[0]) {
-		case '\0':
-			fprintf(stderr, "file ended in declarations section");
-			exit(1);
-		case '\n':
-			newline = true;
-			in++;
-			continue;
-		case '\t': case ' ':
-			in++;
-			continue;
+			case '\0':
+				fprintf(stderr, "file ended in declarations section");
+				exit(1);
+			case '\n':
+				newline = true;
+				in++;
+				continue;
+			case '\t': case ' ':
+				in++;
+				continue;
 		}
 		if (isletter(in[0])) {
 			if (!newline) {
@@ -92,7 +92,7 @@ decl(char *in, FILE *out)
 }
 
 void
-declproper(char *in, FILE *out)
+indecl(char *in, FILE *out)
 {
 	while (true) {
 		seekdeclr(in);
@@ -100,19 +100,18 @@ declproper(char *in, FILE *out)
 	}
 }
 
-
-void 
+void
 declarations(char *in, FILE *out)
 {
 	if (in[0] != '%' || in[1] != '{') {
-		fprintf(stderr, "declaration section must begin with constants");
+		fprintf(stderr, "declarations must begin with constants");
 		exit(1);
 	}
 	in += 2;
 	while (in[0] != '\0') {
 		if (in[0] == '%' && in[1] == '}') {
 			in += 2;
-			declproper(in, out);
+			indecl(in, out);
 			return;
 		}
 		fprintf(out, "%c", in[0]);
@@ -120,7 +119,6 @@ declarations(char *in, FILE *out)
 	}
 	fprintf(stderr, "declaration section ended without close of constants");
 	exit(1);
-
 }
 
 void
@@ -130,24 +128,20 @@ transform(char *in, FILE *out)
 }
 
 
-int 
+int
 main(int argc, char *argv[])
 {
 	if (argc != 2) {
 		fprintf(stderr, "must provide input as string\n");
-		return 1;
+		exit(1);
 	}
-
 	char* in = read_file(argv[1]);
-
-    FILE *out = fopen(OUTPUT_FILE, "w");
-    if (out == NULL) {
-        perror("error writing to file");
-        exit(1);
-    }
-
+	FILE *out = fopen(OUTPUT_FILE, "w");
+	if (out == NULL) {
+		fprintf(stderr, "error writing to file\n");
+		exit(1);
+	}
 	transform(in, out);
-
-    fclose(out);
+	fclose(out);
 	free(in);
 }
