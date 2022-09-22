@@ -12,3 +12,4 @@
 .db
 *.zip
 *.yy.c
+*.gch
