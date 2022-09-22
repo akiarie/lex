@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "automata.h"
+
 #define OUTPUT_FILE "lex.yy.c"
 
 /* read_file: reads contents of file and returns them
@@ -53,6 +55,12 @@ isletter(char c)
 }
 
 bool
+istaborspace(char c)
+{
+	return c == ' ' || c == '\t';
+}
+
+bool
 decl_atend(char *in)
 {
 	return in[0] == '%' && in[1] == '%';
@@ -61,15 +69,42 @@ decl_atend(char *in)
 int
 decl_pattern_trans(char *in, FILE *out)
 {
-	fprintf(stderr, "first pattern: '%s'", in);
-	exit(1);
-	int n = 0;
-	char *name = in;
-	in++; /* first char must be letter */
-	while (isletter(in[0])) {
-		in++;
+	char *pos;
+	fprintf(out, ", pattern: ");
+	for (pos = in; pos[0] != '\n'; pos++) {
+		fprintf(out, "%c", pos[0]);
 	}
-	return n;
+	fprintf(out, "\n");
+	return pos - in;
+}
+
+int
+decl_pattern_seek(char *in)
+{
+	char *pos;
+	for (pos = in; istaborspace(pos[0]); pos++) {}
+	return pos - in;
+}
+
+int
+decl_id_trans(char *in, FILE *out)
+{
+	fprintf(out, "id: ");
+	char *pos;
+	for (pos = in; isletter(pos[0]); pos++) {
+		fprintf(out, "%c", pos[0]);
+	}
+	return pos - in;
+}
+
+int
+decl_decl_trans(char *in, FILE *out)
+{
+	char *pos = in;
+	pos += decl_id_trans(pos, out);
+	pos += decl_pattern_seek(pos);
+	pos += decl_pattern_trans(pos, out);
+	exit(1);
 }
 
 int
@@ -126,7 +161,7 @@ decl_proper_trans(char *in, FILE *out)
 	struct seek_result r;
 	for (r = decl_seek(pos); r.success; r = decl_seek(pos)) {
 		pos += r.delta;
-		pos += decl_pattern_trans(pos, out);
+		pos += decl_decl_trans(pos, out);
 	}
 	return pos - in;
 }
