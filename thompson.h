@@ -1,6 +1,8 @@
 #ifndef LEX_THOMPSON
 #define LEX_THOMPSON
 
+#include<stdbool.h>
+
 /*
  * We make use of the following scheme to parse expressions:
  *	expr	→ concat union
@@ -60,8 +62,18 @@ enum tnode_type {
 struct tnode {
 	enum tnode_type type;
 	char c;
+	int len;
 	struct tnode *left; // also functions as default child
 	struct tnode *right;
 };
+
+struct tnode*
+talloc();
+
+struct tnode*
+thompson_parse(char*);
+
+bool
+thompson_atend(char*);
 
 #endif
