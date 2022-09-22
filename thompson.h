@@ -38,25 +38,23 @@ enum tnode_type {
 	NT_REST			= 1 << 4,
 	NT_REST_EMPTY		= 1 << 5,
 
-	NT_CLOSED_STAR		= 1 << 6,
-	NT_CLOSED_PLUS		= 1 << 7,
-	NT_CLOSED		= 1 << 8,
+	NT_CLOSED		= 0 << 5,
 
-	NT_BASIC_PAREN		= 1 << 9,
-	NT_BASIC_CLASS		= 1 << 10,
-	NT_BASIC_SYMBOL		= 1 << 11,
-	NT_BASIC_EMPTY		= 1 << 12,
+	NT_BASIC_PAREN		= 1 << 6,
+	NT_BASIC_CLASS		= 1 << 7,
+	NT_BASIC_SYMBOL		= 1 << 8,
+	NT_BASIC_EMPTY		= 1 << 9,
 
-	NT_CLASS		= 1 << 13,
-	NT_CLASS_INV		= 1 << 14,
-	NT_INCLASS_SYMBOL	= 1 << 15,
-	NT_INCLASS_CONCAT	= 1 << 16, // symbol inclass
-	NT_INCLASS_RANGE	= 1 << 17,
-	NT_INCLASS_EMPTY	= 1 << 18,
+	NT_CLASS		= 1 << 10,
+	NT_CLASS_INV		= 1 << 11,
+	NT_INCLASS_SYMBOL	= 1 << 12,
+	NT_INCLASS_CONCAT	= 1 << 13, // symbol inclass
+	NT_INCLASS_RANGE	= 1 << 14,
+	NT_INCLASS_EMPTY	= 1 << 15,
 
-	NT_SYMBOL		= 1 << 19,
+	NT_SYMBOL		= 1 << 16,
 
-	NT_EMPTY		= 1 << 20, // ε
+	NT_EMPTY		= 1 << 17, // ε
 };
 
 struct tnode {
