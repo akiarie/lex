@@ -40,7 +40,7 @@ enum tnode_type {
 
 	NT_CLOSED		= 0 << 5,
 
-	NT_BASIC_PAREN		= 1 << 6,
+	NT_BASIC_BRACKET	= 1 << 6,
 	NT_BASIC_CLASS		= 1 << 7,
 	NT_BASIC_SYMBOL		= 1 << 8,
 	NT_BASIC_EMPTY		= 1 << 9,
