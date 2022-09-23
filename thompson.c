@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<strings.h>
 
 #include "thompson.h"
 
@@ -20,15 +21,14 @@ thompson_symbol(char* input)
 	char c = input[0];
 	if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 			|| ('0' <= c && c <= '9')) {
-		printf("%c", c);
-		struct tnode *this = talloc();
-		this->type = NT_SYMBOL;
+		struct tnode *this = tnode_create(NT_SYMBOL);
 		this->c = c;
 		this->len = 1;
+		this->output = (char*) realloc(this->output, sizeof(char) + 1);
+		snprintf(this->output, 1, "%c", c);
 		return this;
 	}
-	fprintf(stderr, "'%c' is not a symbol", c);
-	exit(1);
+	return NULL;
 }
 
 
@@ -43,15 +43,14 @@ thompson_class(char* input)
 struct tnode*
 thompson_basic(char* input)
 {
-	struct tnode *this = talloc();
 	if (thompson_atend(input)) { // ε
-		this->type = NT_BASIC_EMPTY;
-		return this;
+		return tnode_create(NT_BASIC_EMPTY);
 	}
+	struct tnode *this;
 	char *pos = input;
 	switch (input[0]) {
 	case '(':
-		this->type = NT_BASIC_BRACKET;
+		this = tnode_create(NT_BASIC_BRACKET);
 		pos++; printf("(");
 		this->left = thompson_parse(pos); pos += this->left->len;
 		if (pos[0] != ')') {
@@ -61,7 +60,7 @@ thompson_basic(char* input)
 		pos++; printf(")");
 		break;
 	case '[':
-		this->type = NT_BASIC_CLASS;
+		this = tnode_create(NT_BASIC_CLASS);
 		pos++; printf("[");
 		this->left = thompson_class(pos); pos += this->left->len;
 		if (pos[0] != ']') {
@@ -71,7 +70,7 @@ thompson_basic(char* input)
 		pos++; printf("]");
 		break;
 	default:
-		this->type = NT_BASIC_SYMBOL;
+		this = tnode_create(NT_BASIC_SYMBOL);
 		this->left = thompson_symbol(pos); pos += this->left->len;
 		break;
 	}
@@ -83,8 +82,7 @@ thompson_basic(char* input)
 struct tnode*
 thompson_closed(char* input)
 {
-	struct tnode *this = talloc();
-	this->type = NT_CLOSED;
+	struct tnode *this = tnode_create(NT_CLOSED);
 	char *pos = input;
 	this->left = thompson_basic(pos); pos += this->left->len;
 	if (!thompson_atend(pos)) {
@@ -107,16 +105,30 @@ thompson_closed(char* input)
 struct tnode*
 thompson_rest(char* input)
 {
-	struct tnode *this = talloc();
 	if (thompson_atend(input)) { // ε
-		this->type = NT_REST_EMPTY;
-		return this;
+		return tnode_create(NT_REST_EMPTY);
 	}
-	this->type = NT_REST;
+
 	char *pos = input;
-	this->left = thompson_closed(pos); pos += this->left->len;
-	this->right = thompson_rest(pos);
+	struct tnode *l = thompson_closed(pos);
+	if (l == NULL) {
+		return NULL;
+	}
+	pos += l->len;
+	struct tnode *r = thompson_rest(pos);
+	if (r == NULL) {
+		return NULL;
+	}
+	pos += r->len;
+
+	struct tnode *this = tnode_create(NT_REST);
+	this->left = l;
+	this->right = r;
 	this->len = pos - input;
+
+	int outlen = strlen(l->output) + strlen(r->output) + 1;
+	this->output = realloc(this->output, sizeof(char) * outlen + 1);
+	snprintf(this->output, outlen, "·%s%s", l->output, r->output);
 	return this;
 }
 
@@ -124,12 +136,21 @@ thompson_rest(char* input)
 struct tnode*
 thompson_concat(char* input)
 {
-	struct tnode *this = talloc();
-	this->type = NT_CONCAT;
 	char *pos = input;
-	this->left = thompson_closed(pos); pos += this->left->len;
-	this->right = thompson_rest(pos);
+	struct tnode *l = thompson_closed(pos);
+	pos += l->len;
+	struct tnode *r = thompson_rest(pos);
+	pos += r->len;
+
+	struct tnode *this = tnode_create(NT_CONCAT);
+	this->left = l;
+	this->right = r;
 	this->len = pos - input;
+
+	int outlen = strlen(l->output) + strlen(r->output);
+	this->output = (char*) realloc(this->output,
+		sizeof(char) * (outlen + 1));
+	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
 
@@ -137,21 +158,30 @@ thompson_concat(char* input)
 struct tnode*
 thompson_union(char* input)
 {
-	struct tnode *this = talloc();
 	if (thompson_atend(input)) { // ε
-		this->type = NT_UNION_EMPTY;
-		return this;
+		return tnode_create(NT_UNION_EMPTY);
 	}
-	this->type = NT_UNION;
+
 	if (input[0] != '|') {
 		fprintf(stderr, "nonempty unions must start with '|'");
 		exit(1);
 	}
-	printf("|");
+
 	char *pos = input + 1;
-	this->left = thompson_concat(pos); pos += this->left->len;
-	this->right = thompson_union(pos);
+	struct tnode *l = thompson_concat(pos);
+	pos += l->len;
+	struct tnode *r = thompson_union(pos);
+	pos += r->len;
+
+	struct tnode *this = tnode_create(NT_UNION);
+	this->left = l;
+	this->right = r;
 	this->len = pos - input;
+
+	int outlen = strlen(l->output) + strlen(r->output) + 1; // '|'
+	this->output = (char*) realloc(this->output,
+		sizeof(char) * (outlen + 1));
+	snprintf(this->output, outlen, "|%s%s", l->output, r->output);
 	return this;
 }
 
@@ -159,20 +189,45 @@ thompson_union(char* input)
 struct tnode*
 thompson_parse(char* input)
 {
-	struct tnode *this = talloc();
-	this->type = NT_EXPR;
 	char *pos = input;
-	this->left = thompson_concat(pos); pos += this->left->len;
-	this->right = thompson_union(pos);
+	struct tnode *l = thompson_concat(pos);
+	pos += l->len;
+	struct tnode *r = thompson_union(pos);
+	pos += r->len;
+
+	struct tnode *this = tnode_create(NT_EXPR);
+	this->left = l;
+	this->right = r;
 	this->len = pos - input;
+
+	int outlen = strlen(l->output) + strlen(r->output);
+	this->output = (char*) realloc(this->output,
+		sizeof(char) * (outlen + 1));
+	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
 
 
 struct tnode*
-talloc()
+tnode_create(enum tnode_type type)
 {
-	struct tnode *n = (struct tnode*) malloc(sizeof(struct tnode));
-	n->len = 0;
-	return n;
+	struct tnode *this = (struct tnode*) malloc(sizeof(struct tnode));
+	this->type = type;
+	this->len = 0;
+	this->output = (char*) malloc(sizeof(char));
+	this->output = "";
+	return this;
+}
+
+void
+tnode_destroy(struct tnode *this)
+{
+	if (this->left != NULL) {
+		tnode_destroy(this->left);
+	}
+	if (this->right != NULL) {
+		tnode_destroy(this->right);
+	}
+	free(this->output);
+	free(this);
 }

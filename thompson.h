@@ -26,7 +26,7 @@
  *		| symbol - symbol
  *		| ε
  *
- *	symbol	→ a-Z | A-Z | 0-9
+ *	symbol	→ a-z | A-Z | 0-9
 */
 
 enum tnode_type {
@@ -60,13 +60,17 @@ enum tnode_type {
 struct tnode {
 	enum tnode_type type;
 	char c;
+	char *output;
 	int len;
 	struct tnode *left; // also functions as default child
 	struct tnode *right;
 };
 
 struct tnode*
-talloc();
+tnode_create(enum tnode_type);
+
+void
+tnode_destroy(struct tnode*);
 
 struct tnode*
 thompson_parse(char*);

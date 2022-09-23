@@ -7,5 +7,6 @@ int
 main()
 {
 	struct tnode *n = thompson_parse("a(b|c)*d");
-	free(n);
+	printf("%s\n", n->output);
+	tnode_destroy(n);
 }
