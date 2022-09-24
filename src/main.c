@@ -227,13 +227,13 @@ main(int argc, char *argv[])
 {
 	if (argc != 2) {
 		fprintf(stderr, "must provide input as string\n");
-		exit(1);
+		return 1;
 	}
 	char* in = read_file(argv[1]);
 	FILE *out = fopen(OUTPUT_FILE, "w");
 	if (out == NULL) {
 		fprintf(stderr, "error writing to file\n");
-		exit(1);
+		return 1;
 	}
 	transform(in, out);
 	fclose(out);
