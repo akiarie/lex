@@ -21,12 +21,12 @@ confirm_correct(struct t_thompson_case *cs)
 		tnode_destroy(n);
 }
 
-#define LEN 6
+#define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 int
 main()
 {
-	struct t_thompson_case cases[LEN] = {
+	struct t_thompson_case cases[] = {
 		"a(b|c)*d",           "a.(b|c)*.d",
 		"a(ab|c)*d",          "a.(a.b|c)*.d",
 		"ab|cd",              "a.b|c.d",
@@ -34,7 +34,7 @@ main()
 		"andrew|jackson",     "a.n.d.r.e.w|j.a.c.k.s.o.n",
 		"(andrew)|(jackson)", "(a.n.d.r.e.w)|(j.a.c.k.s.o.n)",
 	};
-	for (int i = 0; i < LEN; i++) {
+	for (int i = 0, len = LEN(cases); i < len; i++) {
 		confirm_correct(&cases[i]);
 	}
 
