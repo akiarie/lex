@@ -1,16 +1,4 @@
-# Ignore all
-*
-
-# Unignore all with extensions
-!*.*
-
-# Unignore all dirs
-!*/
-
-*.swp
 .DS_Store
-.db
-*.zip
+*.swp
 *.yy.c
-*.gch
-a.out
+*.o

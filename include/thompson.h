@@ -75,7 +75,4 @@ tnode_destroy(struct tnode*);
 struct tnode*
 thompson_parse(char*);
 
-bool
-thompson_atend(char*);
-
 #endif
