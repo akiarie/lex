@@ -24,8 +24,8 @@ thompson_symbol(char* input)
 		struct tnode *this = tnode_create(NT_SYMBOL);
 		this->c = c;
 		this->len = 1;
-		this->output = (char*) realloc(this->output, sizeof(char) + 1);
-		snprintf(this->output, 1, "%c", c);
+		this->output = (char*) realloc(this->output, sizeof(char) * 2);
+		snprintf(this->output, 2, "%c", c);
 		return this;
 	}
 	return NULL;
@@ -46,35 +46,57 @@ thompson_basic(char* input)
 	if (thompson_atend(input)) { // ε
 		return tnode_create(NT_BASIC_EMPTY);
 	}
-	struct tnode *this;
 	char *pos = input;
+	int outlen;
+	char *output;
+	enum tnode_type type;
+	struct tnode *child;
 	switch (input[0]) {
 	case '(':
-		this = tnode_create(NT_BASIC_BRACKET);
-		pos++; printf("(");
-		this->left = thompson_parse(pos); pos += this->left->len;
+		type = NT_BASIC_BRACKET;
+		pos++;
+		child = thompson_parse(pos);
+		pos += child->len;
 		if (pos[0] != ')') {
 			fprintf(stderr, "expr bracket not closed");
 			exit(1);
 		}
-		pos++; printf(")");
+		pos++;
+		outlen = strlen(child->output) + 2 + 1; // '(' ')'
+		output = (char*) malloc(sizeof(char) * outlen);
+		snprintf(output, outlen, "(%s)", child->output);
 		break;
 	case '[':
-		this = tnode_create(NT_BASIC_CLASS);
-		pos++; printf("[");
-		this->left = thompson_class(pos); pos += this->left->len;
+		type = NT_BASIC_CLASS;
+		pos++;
+		child = thompson_class(pos);
+		pos += child->len;
 		if (pos[0] != ']') {
 			fprintf(stderr, "class bracket not closed");
 			exit(1);
 		}
-		pos++; printf("]");
+		pos++;
+		outlen = strlen(child->output) + 2 + 1; // '[' ']'
+		output = (char*) malloc(sizeof(char) * outlen);
+		snprintf(output, outlen, "[%s]", child->output);
 		break;
 	default:
-		this = tnode_create(NT_BASIC_SYMBOL);
-		this->left = thompson_symbol(pos); pos += this->left->len;
+		type = NT_BASIC_SYMBOL;
+		child = thompson_symbol(pos);
+		if (child == NULL) {
+			return NULL;
+		}
+		pos += child->len;
+		outlen = strlen(child->output) + 1;
+		output = (char*) calloc(1, sizeof(char) * outlen);
+		snprintf(output, outlen, "%s", child->output);
 		break;
 	}
+	struct tnode *this = tnode_create(type);
+	this->left = child;
 	this->len = pos - input;
+	free(this->output);
+	this->output = output;
 	return this;
 }
 
@@ -82,22 +104,34 @@ thompson_basic(char* input)
 struct tnode*
 thompson_closed(char* input)
 {
-	struct tnode *this = tnode_create(NT_CLOSED);
 	char *pos = input;
-	this->left = thompson_basic(pos); pos += this->left->len;
+	struct tnode *basic = thompson_basic(pos);
+	if (basic == NULL) {
+		return NULL;
+	}
+	pos += basic->len;
+	char c = pos[0];
+	char *output = basic->output;
 	if (!thompson_atend(pos)) {
-		if (this->c == '*' || this->c == '+') {
-			this->c = pos[0];
+		if (c == '*' || c == '+') {
 			pos += 1;
 			char d = pos[0];
 			if (!thompson_atend(pos) && (d == '*' || d == '+')) {
 				fprintf(stderr, "double closures not allowed");
 				exit(1);
 			}
-			printf("%c", this->c);
+			int len = strlen(basic->output) + 1 + 1;
+			output = (char*) malloc(sizeof(char) * len);
+			snprintf(output, len, "%s%c", basic->output, c);
 		}
 	}
+	struct tnode *this = tnode_create(NT_CLOSED);
+	this->c = c;
+	this->left = basic;
 	this->len = pos - input;
+	int outlen = strlen(output) + 1; // '.'
+	this->output = realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s", output);
 	return this;
 }
 
@@ -112,12 +146,12 @@ thompson_rest(char* input)
 	char *pos = input;
 	struct tnode *l = thompson_closed(pos);
 	if (l == NULL) {
-		return NULL;
+		return tnode_create(NT_REST_EMPTY);
 	}
 	pos += l->len;
 	struct tnode *r = thompson_rest(pos);
 	if (r == NULL) {
-		return NULL;
+		return tnode_create(NT_REST_EMPTY);
 	}
 	pos += r->len;
 
@@ -126,9 +160,9 @@ thompson_rest(char* input)
 	this->right = r;
 	this->len = pos - input;
 
-	int outlen = strlen(l->output) + strlen(r->output) + 1;
-	this->output = realloc(this->output, sizeof(char) * outlen + 1);
-	snprintf(this->output, outlen, "·%s%s", l->output, r->output);
+	int outlen = strlen(l->output) + strlen(r->output) + 1 + 1; // '.'
+	this->output = realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, ".%s%s", l->output, r->output);
 	return this;
 }
 
@@ -147,9 +181,8 @@ thompson_concat(char* input)
 	this->right = r;
 	this->len = pos - input;
 
-	int outlen = strlen(l->output) + strlen(r->output);
-	this->output = (char*) realloc(this->output,
-		sizeof(char) * (outlen + 1));
+	int outlen = strlen(l->output) + strlen(r->output) + 1;
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
@@ -178,9 +211,8 @@ thompson_union(char* input)
 	this->right = r;
 	this->len = pos - input;
 
-	int outlen = strlen(l->output) + strlen(r->output) + 1; // '|'
-	this->output = (char*) realloc(this->output,
-		sizeof(char) * (outlen + 1));
+	int outlen = strlen(l->output) + strlen(r->output) + 1 + 1; // '|'
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "|%s%s", l->output, r->output);
 	return this;
 }
@@ -200,9 +232,8 @@ thompson_parse(char* input)
 	this->right = r;
 	this->len = pos - input;
 
-	int outlen = strlen(l->output) + strlen(r->output);
-	this->output = (char*) realloc(this->output,
-		sizeof(char) * (outlen + 1));
+	int outlen = strlen(l->output) + strlen(r->output) + 1;
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
@@ -214,8 +245,7 @@ tnode_create(enum tnode_type type)
 	struct tnode *this = (struct tnode*) malloc(sizeof(struct tnode));
 	this->type = type;
 	this->len = 0;
-	this->output = (char*) malloc(sizeof(char));
-	this->output = "";
+	this->output = (char*) calloc(1, sizeof(char));
 	return this;
 }
 
