@@ -243,10 +243,18 @@ struct tnode*
 tnode_create(enum tnode_type type)
 {
 	struct tnode *this = (struct tnode*) malloc(sizeof(struct tnode));
+	this->left = this->right = NULL;
 	this->type = type;
 	this->len = 0;
 	this->output = (char*) calloc(1, sizeof(char));
 	return this;
+}
+
+void
+tnode_printf(struct tnode *this)
+{
+	printf("{len: %d\tc: %c\toutput: %s}\n", this->len, this->c,
+		this->output);
 }
 
 void
@@ -259,5 +267,4 @@ tnode_destroy(struct tnode *this)
 		tnode_destroy(this->right);
 	}
 	free(this->output);
-	free(this);
 }
