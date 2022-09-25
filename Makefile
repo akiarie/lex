@@ -1,13 +1,26 @@
+CC = cc
 OBJECTS = main.o thompson.o
 
 lex: $(OBJECTS)
-	cc -o lex $(OBJECTS)
+	$(CC) -o $@ $(OBJECTS)
 
 thompson.o: thompson.c thompson.h
-	cc -c thompson.c
+	$(CC) -c thompson.c
 
 main.o: main.c thompson.h
-	cc -c main.c
+	$(CC) -c main.c
 
-clean:
+# test
+thompson_test: thompson_test.c thompson.o
+	$(CC) -o $@ thompson_test.c thompson.o
+
+check: thompson_test
+	@./run-tests.sh
+
+clean-tests: 
+	@rm -f thompson_test
+
+clean: clean-tests
 	@rm -f lex $(OBJECTS)
+
+.PHONY: clean clean-tests
