@@ -45,7 +45,7 @@ enum tnode_type {
 	NT_REST			= 1 << 4,
 	NT_REST_EMPTY		= 1 << 5,
 
-	NT_CLOSED		= 0 << 5,
+	NT_CLOSED		= 1 << 5,
 
 	NT_BASIC_BRACKET	= 1 << 6,
 	NT_BASIC_CLASS		= 1 << 7,
