@@ -13,10 +13,11 @@
  *	rest	→ closed rest
  *		| ε
  *
- *	closed	→ basic * | basic + | basic
+ *	closed	→ basic '*' | basic '+' | basic '?' | basic
  *
  *	basic	→ ( expr )
  *		| class
+ *		| var
  *		| symbol
  *		| ε
  *
@@ -26,8 +27,14 @@
  *		| symbol - symbol
  *		| ε
  *
- *	symbol	→ a-z | A-Z | 0-9
-*/
+ *	var	→ { id }
+ *	id	→ letter_ ( letter | digit )*  // an actual closure
+ *
+ *	symbol	→ letter_ | digit | ws
+ *	letter_	→ a-z | A-Z | _
+ *	digit	→ 0-9
+ *	ws	→ ' ' | '\t' | '\n'
+ */
 
 enum tnode_type {
 	NT_EXPR			= 1 << 0,

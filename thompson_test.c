@@ -37,5 +37,4 @@ main()
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		run(&cases[i]);
 	}
-	return 0;
 }

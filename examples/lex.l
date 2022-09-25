@@ -8,19 +8,19 @@ void printyy();
 
 %}
 
-delim	[ \t\n]
+delim		[ \t\n]
 ws 		{delim}+
-letter	[A-Za-z]
-vowel	[AEIOUaeiou]
-cons	[BCDFGHJKLMNPQRSTVWXYZbcdfghjklmnpqrstvwxyz]
-vword	{vowel}{letter}*
-cword	{cons}{letter}*
+letter		[A-Za-z]
+vowel		[AEIOUaeiou]
+cons		[BCDFGHJKLMNPQRSTVWXYZbcdfghjklmnpqrstvwxyz]
+vword		{vowel}{letter}*
+cword		{cons}{letter}*
 
 %%
 
-{ws}	{printyy();}
-{vword}	{printvowel();}
-{cword}	{printcons();}
+{ws}		{printyy();}
+{vword}		{printvowel();}
+{cword}		{printcons();}
 
 %%
 
