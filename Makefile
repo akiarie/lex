@@ -1,18 +1,13 @@
-INCLUDE=include
-SRC=src
-CC=cc
-
-HEADERS= $(INCLUDE)/thompson.h
-
-OBJECTS= $(SRC)/thompson.o $(SRC)/main.o
+OBJECTS = main.o thompson.o
 
 lex: $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS)
+	cc -o lex $(OBJECTS)
 
-include tests/Makefile
+thompson.o: thompson.c thompson.h
+	cc -c thompson.c
 
-$(SRC)/%.o: $(HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $<
+main.o: main.c thompson.h
+	cc -c main.c
 
 clean:
 	@rm -f lex $(OBJECTS)
