@@ -33,15 +33,32 @@ thompson_symbol(char *input)
 }
 
 struct tnode*
+thompson_range(char *input);
+
+struct tnode*
+thompson_atom(char *input);
+
+struct tnode*
 thompson_inclass(char *input)
 {
 	char *pos = input;
-	if (pos[0] == ']') { // ε as first symbol
-		return tnode_create(NT_INCLASS_EMPTY);
+	if (pos[0] == ']') { // ε
+		return tnode_create(NT_INCLASS);
 	}
 
-	fprintf(stderr, "NOT IMPLEMENTED\n");
-	exit(1);
+	struct tnode *l = thompson_atom(pos);
+	pos += l->len;
+	struct tnode *r = thompson_inclass(pos);
+	pos += r->len;
+
+	struct tnode *this = tnode_create(NT_INCLASS);
+	this->len = pos - input;
+	this->left = l;
+	this->right = r;
+	int outlen = strlen(l->output) + strlen(r->output) + 1;
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s%s", l->output, r->output);
+	return this;
 }
 
 struct tnode*

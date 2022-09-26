@@ -22,9 +22,9 @@
  *		| ε
  *
  *	class	→ inclass | ^ inclass
- *	inclass	→ symbol inclass
- *		| range inclass
+ *	inclass	→ atom inclass
  *		| ε
+ *	atom	→ symbol | range
  *	range	→ symbol - symbol
  *
  *	id	→ letter_ ( letter | digit )*  // an actual closure
@@ -53,11 +53,12 @@ enum tnode_type {
 
 	NT_CLASS		= 1 << 11,
 	NT_INCLASS		= 1 << 12,
-	NT_INCLASS_EMPTY	= 1 << 13,
+	NT_ATOM			= 1 << 13,
+	NT_RANGE		= 1 << 14,
 
-	NT_SYMBOL		= 1 << 14,
+	NT_SYMBOL		= 1 << 15,
 
-	NT_EMPTY		= 1 << 15, // ε
+	NT_EMPTY		= 1 << 16, // ε
 };
 
 struct tnode {
