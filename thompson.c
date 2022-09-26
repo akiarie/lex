@@ -16,23 +16,23 @@ thompson_atend(char *input)
 	return false;
 }
 
-struct tnode*
+struct tnode *
 thompson_symbol(char *input)
 {
 	char c = input[0];
 	if (isalpha(c) || isdigit(c)) {
 		struct tnode *this = tnode_create(NT_SYMBOL);
-		this->value = (char*) malloc(sizeof(char) * 2);
+		this->value = (char *) malloc(sizeof(char) * 2);
 		snprintf(this->value, 2, "%c", c);
 		this->len = 1;
-		this->output = (char*) realloc(this->output, sizeof(char) * 2);
+		this->output = (char *) realloc(this->output, sizeof(char) * 2);
 		snprintf(this->output, 2, "%c", c);
 		return this;
 	}
 	return NULL;
 }
 
-struct tnode*
+struct tnode *
 thompson_id(char *input)
 {
 	char *pos = input;
@@ -49,9 +49,9 @@ thompson_id(char *input)
 	}
 	this->len = pos - input;
 	int outlen = this->len + 1;
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s", pos - this->len);
-	this->value = (char*) malloc(sizeof(char) * outlen);
+	this->value = (char *) malloc(sizeof(char) * outlen);
 	snprintf(this->value, outlen, "%s", this->output);
 	return this;
 }
@@ -72,7 +72,7 @@ thompson_validate_range(char start, char end)
 	exit(1);
 }
 
-struct tnode*
+struct tnode *
 thompson_atom(char *input)
 {
 	char *pos = input;
@@ -101,12 +101,12 @@ thompson_atom(char *input)
 	this->right = r;
 
 	int outlen = strlen(l->output) + strlen(r->output) + 1 + 1; // '-'
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s-%s", l->output, r->output);
 	return this;
 }
 
-struct tnode*
+struct tnode *
 thompson_inclass(char *input)
 {
 	char *pos = input;
@@ -124,19 +124,19 @@ thompson_inclass(char *input)
 	this->left = l;
 	this->right = r;
 	int outlen = strlen(l->output) + strlen(r->output) + 1;
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
 
-struct tnode*
+struct tnode *
 thompson_class(char *input)
 {
 	struct tnode *this = tnode_create(NT_CLASS);
 	char *invsym = "";
 	char *pos = input;
 	if (pos[0] == '^') {
-		this->value = (char*) malloc(sizeof(char) * 2);
+		this->value = (char *) malloc(sizeof(char) * 2);
 		snprintf(this->value, 2, "^");
 		invsym = "^";
 		pos++;
@@ -152,9 +152,9 @@ thompson_class(char *input)
 	return this;
 }
 
-typedef struct tnode* (*thompson_parser_func)(char *);
+typedef struct tnode * (*thompson_parser_func)(char *);
 
-struct tnode*
+struct tnode *
 thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 {
 	char *pos = input + 1;
@@ -166,7 +166,7 @@ thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 	}
 	pos++;
 	int outlen = strlen(this->output) + 2 + 1; // 2 brackets
-	char *output = (char*) malloc(sizeof(char) * outlen);
+	char *output = (char *) malloc(sizeof(char) * outlen);
 	snprintf(output, outlen, "%c%s%c", brackets[0], this->output,
 			brackets[1]);
 	free(this->output);
@@ -175,7 +175,7 @@ thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 	return this;
 }
 
-struct tnode*
+struct tnode *
 thompson_basic(char *pos)
 {
 	if (thompson_atend(pos)) { // ε
@@ -195,7 +195,7 @@ thompson_basic(char *pos)
 bool
 isclosure(char c) { return c == '*' || c == '+' || c == '?'; }
 
-struct tnode*
+struct tnode *
 thompson_closed(char *input)
 {
 	char *pos = input;
@@ -214,12 +214,12 @@ thompson_closed(char *input)
 				exit(1);
 			}
 			int len = strlen(basic->output) + 1 + 1;
-			output = (char*) malloc(sizeof(char) * len);
+			output = (char *) malloc(sizeof(char) * len);
 			snprintf(output, len, "%s%c", basic->output, c);
 		}
 	}
 	struct tnode *this = tnode_create(NT_CLOSED);
-	this->value = (char*) malloc(sizeof(char) * 2);
+	this->value = (char *) malloc(sizeof(char) * 2);
 	snprintf(this->value, 2, "%c", c);
 	this->left = basic;
 	this->len = pos - input;
@@ -230,7 +230,7 @@ thompson_closed(char *input)
 }
 
 
-struct tnode*
+struct tnode *
 thompson_rest(char *input)
 {
 	if (thompson_atend(input)) { // ε
@@ -261,7 +261,7 @@ thompson_rest(char *input)
 }
 
 
-struct tnode*
+struct tnode *
 thompson_concat(char *input)
 {
 	char *pos = input;
@@ -276,13 +276,13 @@ thompson_concat(char *input)
 	this->len = pos - input;
 
 	int outlen = strlen(l->output) + strlen(r->output) + 1;
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
 
 
-struct tnode*
+struct tnode *
 thompson_union(char *input)
 {
 	if (thompson_atend(input)) { // ε
@@ -306,13 +306,13 @@ thompson_union(char *input)
 	this->len = pos - input;
 
 	int outlen = strlen(l->output) + strlen(r->output) + 1 + 1; // '|'
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "|%s%s", l->output, r->output);
 	return this;
 }
 
 
-struct tnode*
+struct tnode *
 thompson_parse(char *input)
 {
 	char *pos = input;
@@ -327,20 +327,20 @@ thompson_parse(char *input)
 	this->len = pos - input;
 
 	int outlen = strlen(l->output) + strlen(r->output) + 1;
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
 	return this;
 }
 
 
-struct tnode*
+struct tnode *
 tnode_create(enum tnode_type type)
 {
-	struct tnode *this = (struct tnode*) malloc(sizeof(struct tnode));
+	struct tnode *this = (struct tnode *) malloc(sizeof(struct tnode));
 	this->left = this->right = NULL;
 	this->type = type;
 	this->len = 0;
-	this->output = (char*) calloc(1, sizeof(char));
+	this->output = (char *) calloc(1, sizeof(char));
 	this->value = NULL;
 	return this;
 }

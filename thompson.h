@@ -68,13 +68,13 @@ struct tnode {
 	struct tnode *right;
 };
 
-struct tnode*
+struct tnode *
 tnode_create(enum tnode_type);
 
 void
-tnode_destroy(struct tnode*);
+tnode_destroy(struct tnode *);
 
-struct tnode*
-thompson_parse(char*);
+struct tnode *
+thompson_parse(char *);
 
 #endif
