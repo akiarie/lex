@@ -22,13 +22,38 @@ thompson_symbol(char *input)
 	char c = input[0];
 	if (isalpha(c) || isdigit(c)) {
 		struct tnode *this = tnode_create(NT_SYMBOL);
-		this->c = c;
+		this->value = (char*) malloc(sizeof(char) * 2);
+		snprintf(this->value, 2, "%c", c);
 		this->len = 1;
 		this->output = (char*) realloc(this->output, sizeof(char) * 2);
 		snprintf(this->output, 2, "%c", c);
 		return this;
 	}
 	return NULL;
+}
+
+struct tnode*
+thompson_id(char *input)
+{
+	char *pos = input;
+	if (!(isalpha(pos[0]) || pos[0] == '_')) {
+		fprintf(stderr, "id must begin with letter or underscore");
+		exit(1);
+	}
+	struct tnode *this = tnode_create(NT_ID);
+	for (; pos[0] != '}'; pos++) {
+		if (!(isalpha(pos[0]) || isdigit(pos[0]) || pos[0] == '_')) {
+			fprintf(stderr, "invalid id char '%c'", pos[0]);
+			exit(1);
+		}
+	}
+	this->len = pos - input;
+	int outlen = this->len + 1;
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s", pos - this->len);
+	this->value = (char*) malloc(sizeof(char) * outlen);
+	snprintf(this->value, outlen, "%s", this->output);
+	return this;
 }
 
 void
@@ -68,7 +93,7 @@ thompson_atom(char *input)
 	}
 	pos += r->len;
 
-	thompson_validate_range(l->c, r->c);
+	thompson_validate_range(l->value[0], r->value[0]);
 
 	struct tnode *this = tnode_create(NT_RANGE);
 	this->len = pos - input;
@@ -111,7 +136,8 @@ thompson_class(char *input)
 	char *invsym = "";
 	char *pos = input;
 	if (pos[0] == '^') {
-		this->c = '^';
+		this->value = (char*) malloc(sizeof(char) * 2);
+		snprintf(this->value, 2, "^");
 		invsym = "^";
 		pos++;
 	}
@@ -167,6 +193,20 @@ thompson_basic(char *input)
 		output = (char*) malloc(sizeof(char) * outlen);
 		snprintf(output, outlen, "[%s]", child->output);
 		break;
+	case '{':
+		type = NT_ID;
+		pos++;
+		child = thompson_id(pos);
+		pos += child->len;
+		if (pos[0] != '}') {
+			fprintf(stderr, "id bracket not closed\n");
+			exit(1);
+		}
+		pos++;
+		outlen = strlen(child->output) + 2 + 1; // '{' '}'
+		output = (char*) malloc(sizeof(char) * outlen);
+		snprintf(output, outlen, "{%s}", child->output);
+		break;
 	default:
 		type = NT_BASIC_SYMBOL;
 		child = thompson_symbol(pos);
@@ -187,6 +227,8 @@ thompson_basic(char *input)
 	return this;
 }
 
+bool
+isclosure(char c) { return c == '*' || c == '+' || c == '?'; }
 
 struct tnode*
 thompson_closed(char *input)
@@ -200,10 +242,9 @@ thompson_closed(char *input)
 	char c = pos[0];
 	char *output = basic->output;
 	if (!thompson_atend(pos)) {
-		if (c == '*' || c == '+') {
+		if (isclosure(c)) {
 			pos += 1;
-			char d = pos[0];
-			if (!thompson_atend(pos) && (d == '*' || d == '+')) {
+			if (!thompson_atend(pos) && (isclosure(pos[0]))) {
 				fprintf(stderr, "double closures not allowed\n");
 				exit(1);
 			}
@@ -213,7 +254,8 @@ thompson_closed(char *input)
 		}
 	}
 	struct tnode *this = tnode_create(NT_CLOSED);
-	this->c = c;
+	this->value = (char*) malloc(sizeof(char) * 2);
+	snprintf(this->value, 2, "%c", c);
 	this->left = basic;
 	this->len = pos - input;
 	int outlen = strlen(output) + 1; // '.'
@@ -334,13 +376,14 @@ tnode_create(enum tnode_type type)
 	this->type = type;
 	this->len = 0;
 	this->output = (char*) calloc(1, sizeof(char));
+	this->value = NULL;
 	return this;
 }
 
 void
 tnode_printf(struct tnode *this)
 {
-	printf("{len: %d\tc: %c\toutput: %s}\n", this->len, this->c,
+	printf("{len: %d\tval: %s\toutput: %s}\n", this->len, this->value,
 		this->output);
 }
 
@@ -352,6 +395,9 @@ tnode_destroy(struct tnode *this)
 	}
 	if (this->right != NULL) {
 		tnode_destroy(this->right);
+	}
+	if (this->value != NULL) {
+		free(this->value);
 	}
 	free(this->output);
 }

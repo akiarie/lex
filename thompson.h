@@ -55,14 +55,16 @@ enum tnode_type {
 	NT_INCLASS		= 1 << 12,
 	NT_RANGE		= 1 << 13,
 
-	NT_SYMBOL		= 1 << 14,
+	NT_ID			= 1 << 14,
 
-	NT_EMPTY		= 1 << 15, // ε
+	NT_SYMBOL		= 1 << 15,
+
+	NT_EMPTY		= 1 << 16, // ε
 };
 
 struct tnode {
 	enum tnode_type type;
-	char c;
+	char *value;
 	char *output;
 	int len;
 	struct tnode *left; // also functions as default child
