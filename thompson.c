@@ -40,55 +40,28 @@ thompson_inclass(char *input)
 		return tnode_create(NT_INCLASS_EMPTY);
 	}
 
-	struct tnode *l = thompson_symbol(pos);
-	if (l == NULL) {
-		fprintf(stderr, "nonempty class must begin with symbol\n");
-		exit(1);
-	}
-	pos += l->len;
-
-	struct tnode *r;
-	struct tnode *this = tnode_create(NT_INCLASS);
-	int outlen;
-	char *output;
-	bool isrange = (pos[0] == '-');
-	if (isrange) {
-		this->c = '-';
-		pos++;
-		r = thompson_inclass(pos);
-		if (r->type == NT_INCLASS_EMPTY) {
-			fprintf(stderr, "range cannot end in empty\n");
-			exit(1);
-		}
-	} else {
-		r = thompson_inclass(pos);
-	}
-	pos += r->len;
-	this->len = pos - input;
-
-	this->left = l;
-	this->right = r;
-
-	//int outlen = strlen(l->output) + strlen(r->output) + 1;
-	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
-	snprintf(this->output, outlen, "%s%s", l->output, r->output);
-	return this;
+	fprintf(stderr, "NOT IMPLEMENTED\n");
+	exit(1);
 }
-
 
 struct tnode*
 thompson_class(char *input)
 {
 	struct tnode *this = tnode_create(NT_CLASS);
+	char *invsym = "";
 	char *pos = input;
 	if (pos[0] == '^') {
 		this->c = '^';
+		invsym = "^";
 		pos++;
 	}
 	struct tnode *icl = thompson_inclass(pos);
-	int outlen = strlen(icl->output) + 1;
+	this->left = icl;
+	this->len = pos - input;
+
+	int outlen = strlen(invsym) + strlen(icl->output) + 1;
 	this->output = realloc(this->output, sizeof(char) * outlen);
-	snprintf(this->output, outlen, "%s", icl->output);
+	snprintf(this->output, outlen, "%s%s", invsym, icl->output);
 	return this;
 }
 

@@ -23,8 +23,9 @@
  *
  *	class	→ inclass | ^ inclass
  *	inclass	→ symbol inclass
- *		| symbol - symbol inclass
+ *		| range inclass
  *		| ε
+ *	range	→ symbol - symbol
  *
  *	id	→ letter_ ( letter | digit )*  // an actual closure
  *
