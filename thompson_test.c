@@ -33,7 +33,8 @@ main()
 		{"(ab)|(cd)",		"(a.b)|(c.d)"},
 		{"andrew|jackson",	"a.n.d.r.e.w|j.a.c.k.s.o.n"},
 		{"(andrew)|(jackson)",	"(a.n.d.r.e.w)|(j.a.c.k.s.o.n)"},
-		{"abcd[efg]hijk",	"abcd[efg]hijk"},
+		{"a[bcd]efg",		"a.[bcd].e.f.g"},
+		{"a[b-z0-9abc]efg",	"a.[b-z0-9abc].e.f.g"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		run(&cases[i]);

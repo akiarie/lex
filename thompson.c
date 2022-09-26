@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<strings.h>
+#include<ctype.h>
 #include<assert.h>
 
 #include "thompson.h"
@@ -15,13 +16,11 @@ thompson_atend(char *input)
 	return false;
 }
 
-
 struct tnode*
 thompson_symbol(char *input)
 {
 	char c = input[0];
-	if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
-			|| ('0' <= c && c <= '9')) {
+	if (isalpha(c) || isdigit(c)) {
 		struct tnode *this = tnode_create(NT_SYMBOL);
 		this->c = c;
 		this->len = 1;
@@ -32,11 +31,55 @@ thompson_symbol(char *input)
 	return NULL;
 }
 
-struct tnode*
-thompson_range(char *input);
+void
+thompson_validate_range(char start, char end)
+{
+	if ( (isdigit(start) && isdigit(end))
+			|| (isupper(start) && isupper(end))
+			|| (islower(start) && islower(end)) ) {
+		if (start <= end) {
+			return;
+		}
+		fprintf(stderr, "'%c' higher than '%c'\n", start, end);
+		exit(1);
+	}
+	fprintf(stderr, "'%c' and '%c' cannot be limits\n", start, end);
+	exit(1);
+}
 
 struct tnode*
-thompson_atom(char *input);
+thompson_atom(char *input)
+{
+	char *pos = input;
+	struct tnode *l = thompson_symbol(pos);
+	if (l == NULL) {
+		fprintf(stderr, "atom must begin with symbol\n");
+		exit(1);
+	}
+	pos += l->len;
+	if (pos[0] != '-') {
+		return l;
+	}
+	pos++;
+	struct tnode *r = thompson_symbol(pos);
+	if (r == NULL) {
+		fprintf(stderr, "range must end with symbol\n");
+		exit(1);
+	}
+	pos += r->len;
+
+	thompson_validate_range(l->c, r->c);
+
+	struct tnode *this = tnode_create(NT_RANGE);
+	this->len = pos - input;
+	this->left = l;
+	this->right = r;
+
+	int outlen = strlen(l->output) + strlen(r->output) + 1 + 1; // '-'
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s-%s", l->output, r->output);
+	return this;
+}
 
 struct tnode*
 thompson_inclass(char *input)
@@ -73,6 +116,7 @@ thompson_class(char *input)
 		pos++;
 	}
 	struct tnode *icl = thompson_inclass(pos);
+	pos += icl->len;
 	this->left = icl;
 	this->len = pos - input;
 
