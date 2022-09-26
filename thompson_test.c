@@ -36,6 +36,7 @@ main()
 		{"a[bcd]?efg",		"a.[bcd]?.e.f.g"},
 		{"a[^b-z0-9abc]+efg",	"a.[^b-z0-9abc]+.e.f.g"},
 		{"{robert}+[a-z]*bro",	"{robert}+.[a-z]*.b.r.o"},
+		{"ab\\t\\n[ab\\t]cd",	"ab\\t\\n[ab\\t]cd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		run(&cases[i]);

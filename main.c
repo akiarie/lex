@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "automata.h"
 
@@ -46,12 +47,6 @@ read_file(char *path)
 	fclose(f);
 	str[fsize] = '\0';
 	return str;
-}
-
-bool
-isletter(char c)
-{
-	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 }
 
 bool
@@ -91,7 +86,7 @@ decl_id_trans(char *in, FILE *out)
 {
 	fprintf(out, "id: ");
 	char *pos;
-	for (pos = in; isletter(pos[0]); pos++) {
+	for (pos = in; isalpha(pos[0]); pos++) {
 		fprintf(out, "%c", pos[0]);
 	}
 	return pos - in;
@@ -136,7 +131,7 @@ decl_seek(char *in)
 {
 	char *pos = in;
 	pos += decl_seeknewline(pos); // newline must precede declaration
-	while (!isletter(pos[0])) {
+	while (!isalpha(pos[0])) {
 		if (decl_atend(in)) {
 			return (struct seek_result){false, pos - in};
 		}

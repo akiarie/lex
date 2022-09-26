@@ -20,7 +20,15 @@ struct tnode *
 thompson_symbol(char *input)
 {
 	char c = input[0];
-	if (isalpha(c) || isdigit(c)) {
+	if (c == '\\') {
+		char d = input[1];
+		switch (input[1]) {
+		case 'n':
+		case 't':
+			break;
+		}
+	}
+	if (isalpha(c) || isdigit(c) || c == ' ') {
 		struct tnode *this = tnode_create(NT_SYMBOL);
 		this->value = (char *) malloc(sizeof(char) * 2);
 		snprintf(this->value, 2, "%c", c);
