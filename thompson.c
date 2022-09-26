@@ -171,6 +171,7 @@ thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 			brackets[1]);
 	free(this->output);
 	this->output = output;
+	this->len = pos - input;
 	return this;
 }
 
