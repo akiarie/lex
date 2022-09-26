@@ -176,13 +176,12 @@ thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 }
 
 struct tnode*
-thompson_basic(char *input)
+thompson_basic(char *pos)
 {
-	if (thompson_atend(input)) { // ε
+	if (thompson_atend(pos)) { // ε
 		return tnode_create(NT_BASIC_EMPTY);
 	}
-	char *pos = input;
-	switch (input[0]) {
+	switch (pos[0]) {
 	case '(':
 		return thompson_bracketed("()", thompson_parse, pos);
 	case '[':
