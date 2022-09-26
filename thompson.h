@@ -46,20 +46,17 @@ enum tnode_type {
 
 	NT_CLOSED		= 1 << 6,
 
-	NT_BASIC_BRACKET	= 1 << 7,
-	NT_BASIC_CLASS		= 1 << 8,
-	NT_BASIC_SYMBOL		= 1 << 9,
-	NT_BASIC_EMPTY		= 1 << 10,
+	NT_BASIC_EMPTY		= 1 << 7,
 
-	NT_CLASS		= 1 << 11,
-	NT_INCLASS		= 1 << 12,
-	NT_RANGE		= 1 << 13,
+	NT_CLASS		= 1 << 8,
+	NT_INCLASS		= 1 << 9,
+	NT_RANGE		= 1 << 10,
 
-	NT_ID			= 1 << 14,
+	NT_ID			= 1 << 11,
 
-	NT_SYMBOL		= 1 << 15,
+	NT_SYMBOL		= 1 << 12,
 
-	NT_EMPTY		= 1 << 16, // ε
+	NT_EMPTY		= 1 << 13, // ε
 };
 
 struct tnode {

@@ -152,6 +152,27 @@ thompson_class(char *input)
 	return this;
 }
 
+typedef struct tnode* (*thompson_parser_func)(char *);
+
+struct tnode*
+thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
+{
+	char *pos = input + 1;
+	struct tnode *this = func(pos);
+	pos += this->len;
+	if (pos[0] != brackets[1]) {
+		fprintf(stderr, "can't find closing bracket '%c'", brackets[1]);
+		exit(1);
+	}
+	pos++;
+	int outlen = strlen(this->output) + 2 + 1; // 2 brackets
+	char *output = (char*) malloc(sizeof(char) * outlen);
+	snprintf(output, outlen, "%c%s%c", brackets[0], this->output,
+			brackets[1]);
+	free(this->output);
+	this->output = output;
+	return this;
+}
 
 struct tnode*
 thompson_basic(char *input)
@@ -160,71 +181,15 @@ thompson_basic(char *input)
 		return tnode_create(NT_BASIC_EMPTY);
 	}
 	char *pos = input;
-	int outlen;
-	char *output;
-	enum tnode_type type;
-	struct tnode *child;
 	switch (input[0]) {
 	case '(':
-		type = NT_BASIC_BRACKET;
-		pos++;
-		child = thompson_parse(pos);
-		pos += child->len;
-		if (pos[0] != ')') {
-			fprintf(stderr, "expr bracket not closed\n");
-			exit(1);
-		}
-		pos++;
-		outlen = strlen(child->output) + 2 + 1; // '(' ')'
-		output = (char*) malloc(sizeof(char) * outlen);
-		snprintf(output, outlen, "(%s)", child->output);
-		break;
+		return thompson_bracketed("()", thompson_parse, pos);
 	case '[':
-		type = NT_BASIC_CLASS;
-		pos++;
-		child = thompson_class(pos);
-		pos += child->len;
-		if (pos[0] != ']') {
-			fprintf(stderr, "class bracket not closed\n");
-			exit(1);
-		}
-		pos++;
-		outlen = strlen(child->output) + 2 + 1; // '[' ']'
-		output = (char*) malloc(sizeof(char) * outlen);
-		snprintf(output, outlen, "[%s]", child->output);
-		break;
+		return thompson_bracketed("[]", thompson_class, pos);
 	case '{':
-		type = NT_ID;
-		pos++;
-		child = thompson_id(pos);
-		pos += child->len;
-		if (pos[0] != '}') {
-			fprintf(stderr, "id bracket not closed\n");
-			exit(1);
-		}
-		pos++;
-		outlen = strlen(child->output) + 2 + 1; // '{' '}'
-		output = (char*) malloc(sizeof(char) * outlen);
-		snprintf(output, outlen, "{%s}", child->output);
-		break;
-	default:
-		type = NT_BASIC_SYMBOL;
-		child = thompson_symbol(pos);
-		if (child == NULL) {
-			return NULL;
-		}
-		pos += child->len;
-		outlen = strlen(child->output) + 1;
-		output = (char*) calloc(1, sizeof(char) * outlen);
-		snprintf(output, outlen, "%s", child->output);
-		break;
+		return thompson_bracketed("{}", thompson_id, pos);
 	}
-	struct tnode *this = tnode_create(type);
-	this->left = child;
-	this->len = pos - input;
-	free(this->output);
-	this->output = output;
-	return this;
+	return thompson_symbol(pos);
 }
 
 bool
