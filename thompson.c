@@ -1,14 +1,15 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<strings.h>
+#include<assert.h>
 
 #include "thompson.h"
 
 bool
-thompson_atend(char* input)
+thompson_atend(char *input)
 {
 	switch (input[0]) {
-	case '\0': case ')': case ']':
+	case '\0': case ')': case ']': case '}':
 		return true;
 	}
 	return false;
@@ -16,7 +17,7 @@ thompson_atend(char* input)
 
 
 struct tnode*
-thompson_symbol(char* input)
+thompson_symbol(char *input)
 {
 	char c = input[0];
 	if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
@@ -31,17 +32,69 @@ thompson_symbol(char* input)
 	return NULL;
 }
 
-
 struct tnode*
-thompson_class(char* input)
+thompson_inclass(char *input)
 {
-	fprintf(stderr, "class not implemented");
-	exit(1);
+	char *pos = input;
+	if (pos[0] == ']') { // ε as first symbol
+		return tnode_create(NT_INCLASS_EMPTY);
+	}
+
+	struct tnode *l = thompson_symbol(pos);
+	if (l == NULL) {
+		fprintf(stderr, "nonempty class must begin with symbol\n");
+		exit(1);
+	}
+	pos += l->len;
+
+	struct tnode *r;
+	struct tnode *this = tnode_create(NT_INCLASS);
+	int outlen;
+	char *output;
+	bool isrange = (pos[0] == '-');
+	if (isrange) {
+		this->c = '-';
+		pos++;
+		r = thompson_inclass(pos);
+		if (r->type == NT_INCLASS_EMPTY) {
+			fprintf(stderr, "range cannot end in empty\n");
+			exit(1);
+		}
+	} else {
+		r = thompson_inclass(pos);
+	}
+	pos += r->len;
+	this->len = pos - input;
+
+	this->left = l;
+	this->right = r;
+
+	//int outlen = strlen(l->output) + strlen(r->output) + 1;
+	this->output = (char*) realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s%s", l->output, r->output);
+	return this;
 }
 
 
 struct tnode*
-thompson_basic(char* input)
+thompson_class(char *input)
+{
+	struct tnode *this = tnode_create(NT_CLASS);
+	char *pos = input;
+	if (pos[0] == '^') {
+		this->c = '^';
+		pos++;
+	}
+	struct tnode *icl = thompson_inclass(pos);
+	int outlen = strlen(icl->output) + 1;
+	this->output = realloc(this->output, sizeof(char) * outlen);
+	snprintf(this->output, outlen, "%s", icl->output);
+	return this;
+}
+
+
+struct tnode*
+thompson_basic(char *input)
 {
 	if (thompson_atend(input)) { // ε
 		return tnode_create(NT_BASIC_EMPTY);
@@ -58,7 +111,7 @@ thompson_basic(char* input)
 		child = thompson_parse(pos);
 		pos += child->len;
 		if (pos[0] != ')') {
-			fprintf(stderr, "expr bracket not closed");
+			fprintf(stderr, "expr bracket not closed\n");
 			exit(1);
 		}
 		pos++;
@@ -72,7 +125,7 @@ thompson_basic(char* input)
 		child = thompson_class(pos);
 		pos += child->len;
 		if (pos[0] != ']') {
-			fprintf(stderr, "class bracket not closed");
+			fprintf(stderr, "class bracket not closed\n");
 			exit(1);
 		}
 		pos++;
@@ -102,7 +155,7 @@ thompson_basic(char* input)
 
 
 struct tnode*
-thompson_closed(char* input)
+thompson_closed(char *input)
 {
 	char *pos = input;
 	struct tnode *basic = thompson_basic(pos);
@@ -117,7 +170,7 @@ thompson_closed(char* input)
 			pos += 1;
 			char d = pos[0];
 			if (!thompson_atend(pos) && (d == '*' || d == '+')) {
-				fprintf(stderr, "double closures not allowed");
+				fprintf(stderr, "double closures not allowed\n");
 				exit(1);
 			}
 			int len = strlen(basic->output) + 1 + 1;
@@ -137,7 +190,7 @@ thompson_closed(char* input)
 
 
 struct tnode*
-thompson_rest(char* input)
+thompson_rest(char *input)
 {
 	if (thompson_atend(input)) { // ε
 		return tnode_create(NT_REST_EMPTY);
@@ -168,7 +221,7 @@ thompson_rest(char* input)
 
 
 struct tnode*
-thompson_concat(char* input)
+thompson_concat(char *input)
 {
 	char *pos = input;
 	struct tnode *l = thompson_closed(pos);
@@ -189,14 +242,14 @@ thompson_concat(char* input)
 
 
 struct tnode*
-thompson_union(char* input)
+thompson_union(char *input)
 {
 	if (thompson_atend(input)) { // ε
 		return tnode_create(NT_UNION_EMPTY);
 	}
 
 	if (input[0] != '|') {
-		fprintf(stderr, "nonempty unions must start with '|'");
+		fprintf(stderr, "nonempty unions must start with '|'\n");
 		exit(1);
 	}
 
@@ -219,7 +272,7 @@ thompson_union(char* input)
 
 
 struct tnode*
-thompson_parse(char* input)
+thompson_parse(char *input)
 {
 	char *pos = input;
 	struct tnode *l = thompson_concat(pos);

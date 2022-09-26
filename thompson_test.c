@@ -27,12 +27,13 @@ int
 main()
 {
 	struct testcase cases[] = {
-		"a(b|c)*d",           "a.(b|c)*.d",
-		"a(ab|c)*d",          "a.(a.b|c)*.d",
-		"ab|cd",              "a.b|c.d",
-		"(ab)|(cd)",          "(a.b)|(c.d)",
-		"andrew|jackson",     "a.n.d.r.e.w|j.a.c.k.s.o.n",
-		"(andrew)|(jackson)", "(a.n.d.r.e.w)|(j.a.c.k.s.o.n)",
+		{"a(b|c)*d",		"a.(b|c)*.d"},
+		{"a(ab|c)*d",		"a.(a.b|c)*.d"},
+		{"ab|cd",		"a.b|c.d"},
+		{"(ab)|(cd)",		"(a.b)|(c.d)"},
+		{"andrew|jackson",	"a.n.d.r.e.w|j.a.c.k.s.o.n"},
+		{"(andrew)|(jackson)",	"(a.n.d.r.e.w)|(j.a.c.k.s.o.n)"},
+		{"abcd[efg]hijk",	"abcd[efg]hijk"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		run(&cases[i]);
