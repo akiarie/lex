@@ -19,20 +19,29 @@ thompson_atend(char *input)
 struct tnode *
 thompson_symbol(char *input)
 {
-	char c = input[0];
+	char *pos = input;
+	char c = pos[0];
+	pos++;
 	if (c == '\\') {
-		char d = input[1];
-		switch (input[1]) {
+		char d = pos[0];
+		switch (d) {
 		case 'n':
-		case 't':
+			c = '\n';
 			break;
+		case 't':
+			c = '\t';
+			break;
+		default:
+			fprintf(stderr, "invalid control sequence '\\%c'", d);
+			exit(1);
 		}
+		pos++;
 	}
-	if (isalpha(c) || isdigit(c) || c == ' ') {
+	if (isalpha(c) || isdigit(c) || isspace(c)) {
 		struct tnode *this = tnode_create(NT_SYMBOL);
 		this->value = (char *) malloc(sizeof(char) * 2);
 		snprintf(this->value, 2, "%c", c);
-		this->len = 1;
+		this->len = pos - input;
 		this->output = (char *) realloc(this->output, sizeof(char) * 2);
 		snprintf(this->output, 2, "%c", c);
 		return this;
