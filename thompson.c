@@ -381,13 +381,6 @@ tnode_create(enum tnode_type type)
 	return this;
 }
 
-void
-tnode_printf(struct tnode *this)
-{
-	printf("{len: %d\tval: %s\toutput: %s}\n", this->len, this->value,
-		this->output);
-}
-
 char *
 tnode_output(struct tnode *this)
 {
@@ -402,9 +395,8 @@ tnode_output(struct tnode *this)
 		len = strlen(l) + strlen(r) + 1;
 		output = (char *) malloc(sizeof(char) * len);
 		snprintf(output, len, "%s%s", l, r);
-		printf("'%s', '%s'\n", l, r);
-		/*free(l);*/
-		/*free(r);*/
+		free(l);
+		free(r);
 		break;
 
 	case NT_UNION:
@@ -413,8 +405,8 @@ tnode_output(struct tnode *this)
 		len = strlen(l) + strlen(r) + 1 + 1;
 		output = (char *) malloc(sizeof(char) * len);
 		snprintf(output, len, "|%s%s", l, r);
-		/*free(l);*/
-		/*free(r);*/
+		free(l);
+		free(r);
 		break;
 	case NT_REST:
 		l = tnode_output(this->left);
@@ -422,22 +414,22 @@ tnode_output(struct tnode *this)
 		len = strlen(l) + strlen(r) + 1 + 1;
 		output = (char *) malloc(sizeof(char) * len);
 		snprintf(output, len, ".%s%s", l, r);
-		/*free(l);*/
-		/*free(r);*/
+		free(l);
+		free(r);
 		break;
 
 	case NT_CLOSED:
 		l = tnode_output(this->left);
-		if (this->value == NULL) {
-			len = strlen(l) + 1;
-			output = (char *) malloc(sizeof(char) * len);
-			snprintf(output, len, "%s", l);
-		} else {
+		if (this->value != NULL) {
 			len = strlen(l) + strlen(this->value) + 1;
 			output = (char *) malloc(sizeof(char) * len);
 			snprintf(output, len, "%s%s", l, this->value);
+			break;
 		}
-		/*free(l);*/
+		len = strlen(l) + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "%s", l);
+		free(l);
 		break;
 
 	case NT_BASIC_EXPR:
@@ -463,6 +455,8 @@ tnode_output(struct tnode *this)
 		break;
 
 	case NT_EMPTY:
+		output = (char *) malloc(sizeof(char));
+		*output = '\0';
 		break;
 
 	default:

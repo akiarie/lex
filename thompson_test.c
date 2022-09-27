@@ -14,7 +14,7 @@ run(struct testcase *cs)
 {
 		struct tnode *n = thompson_parse(cs->input);
 		char *output = tnode_output(n);
-		if (strcmp(cs->output, tnode_output(n)) != 0) {
+		if (strcmp(cs->output, output) != 0) {
 			fprintf(stderr, "input '%s' got '%s' instead of '%s'\n",
 				cs->input, output, cs->output);
 			exit(1);
