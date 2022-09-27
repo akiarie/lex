@@ -21,6 +21,7 @@ clean-tests:
 	@rm -f thompson_test
 
 clean: clean-tests
-	@rm -f lex $(OBJECTS)
+	@rm -f lex $(OBJECTS) *.gch a.out
+	@rm -rf *.dSYM
 
 .PHONY: clean clean-tests

@@ -4,3 +4,6 @@
 *.o
 lex
 *_test
+*.gch
+*.dSYM
+a.out
