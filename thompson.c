@@ -233,17 +233,7 @@ thompson_closed(char *input)
 	if (!thompson_atend(pos)) {
 		char c = pos[0];
 		if (isclosure(c)) {
-			switch (c) {
-			case '*':
-				type = NT_CLOSED_STAR;
-				break;
-			case '?':
-				type = NT_CLOSED_QUEST;
-				break;
-			case '+':
-				type = NT_CLOSED_PLUS;
-				break;
-			}
+			type = NT_CLOSURE;
 			pos += 1;
 			if (!thompson_atend(pos) && (isclosure(pos[0]))) {
 				fprintf(stderr, "double closures not allowed\n");
@@ -406,7 +396,7 @@ tnode_output(struct tnode *this)
 		free(l);
 		break;
 
-	case NT_CLOSED_STAR: case NT_CLOSED_QUEST: case NT_CLOSED_PLUS:
+	case NT_CLOSURE:
 		l = tnode_output(this->left);
 		len = strlen(l) + strlen(this->value) + 1;
 		output = (char *) malloc(sizeof(char) * len);
