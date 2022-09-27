@@ -38,25 +38,25 @@ enum tnode_type {
 	NT_EXPR		= 1 << 0,
 	NT_UNION	= 1 << 1,
 
-	NT_CONCAT	= 1 << 3,
-	NT_REST		= 1 << 4,
+	NT_CONCAT	= 1 << 2,
+	NT_REST		= 1 << 3,
 
-	NT_CLOSED_BLANK	= 1 << 5,
-	NT_CLOSURE	= 1 << 6,
+	NT_CLOSED_BLANK	= 1 << 4,
+	NT_CLOSURE	= 1 << 5,
 
-	NT_BASIC_EXPR	= 1 << 7,
-	NT_BASIC_CLASS	= 1 << 8,
-	NT_BASIC_ID	= 1 << 9,
+	NT_BASIC_EXPR	= 1 << 6,
+	NT_BASIC_CLASS	= 1 << 7,
+	NT_BASIC_ID	= 1 << 8,
 
-	NT_CLASS	= 1 << 11,
-	NT_INCLASS	= 1 << 12,
-	NT_RANGE	= 1 << 13,
+	NT_CLASS	= 1 << 9,
+	NT_INCLASS	= 1 << 10,
+	NT_RANGE	= 1 << 11,
 
-	NT_ID		= 1 << 14,
+	NT_ID		= 1 << 12,
 
-	NT_SYMBOL	= 1 << 15,
+	NT_SYMBOL	= 1 << 13,
 
-	NT_EMPTY	= 1 << 16, // ε
+	NT_EMPTY	= 1 << 14, // ε
 };
 
 struct tnode {
@@ -67,16 +67,16 @@ struct tnode {
 	struct tnode *right;
 };
 
-struct tnode *
+struct tnode*
 tnode_create(enum tnode_type);
 
 void
 tnode_destroy(struct tnode *);
 
-char *
+char*
 tnode_output(struct tnode *);
 
-struct tnode *
+struct tnode*
 thompson_parse(char *);
 
 #endif

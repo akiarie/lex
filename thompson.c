@@ -16,7 +16,7 @@ thompson_atend(char *input)
 	return false;
 }
 
-struct tnode *
+struct tnode*
 thompson_symbol(char *input)
 {
 	char *pos = input;
@@ -47,7 +47,7 @@ thompson_symbol(char *input)
 	return NULL;
 }
 
-struct tnode *
+struct tnode*
 thompson_id(char *input)
 {
 	char *pos = input;
@@ -55,13 +55,13 @@ thompson_id(char *input)
 		fprintf(stderr, "id must begin with letter or underscore");
 		exit(1);
 	}
-	struct tnode *this = tnode_create(NT_ID);
 	for (; pos[0] != '}'; pos++) {
 		if (!(isalpha(pos[0]) || isdigit(pos[0]) || pos[0] == '_')) {
 			fprintf(stderr, "invalid id char '%c'", pos[0]);
 			exit(1);
 		}
 	}
+	struct tnode *this = tnode_create(NT_ID);
 	this->len = pos - input;
 	int outlen = this->len + 1;
 	this->value = (char *) malloc(sizeof(char) * outlen);
@@ -85,7 +85,7 @@ thompson_validate_range(char start, char end)
 	exit(1);
 }
 
-struct tnode *
+struct tnode*
 thompson_atom(char *input)
 {
 	char *pos = input;
@@ -119,7 +119,7 @@ thompson_atom(char *input)
 	return this;
 }
 
-struct tnode *
+struct tnode*
 thompson_inclass(char *input)
 {
 	char *pos = input;
@@ -146,7 +146,30 @@ thompson_inclass(char *input)
 	return this;
 }
 
-struct tnode *
+struct tnode*
+thompson_invclass(char *input)
+{
+	struct tnode *this = tnode_create(NT_CLASS);
+	char *invsym = "";
+	char *pos = input;
+	if (pos[0] == '^') {
+		this->value = (char *) malloc(sizeof(char) * 2);
+		snprintf(this->value, 2, "^");
+		invsym = "^";
+		pos++;
+	}
+	struct tnode *icl = thompson_inclass(pos);
+	pos += icl->len;
+	this->left = icl;
+	this->len = pos - input;
+
+	int outlen = strlen(invsym) + strlen(icl->value) + 1;
+	this->value = (char *) malloc(sizeof(char) * outlen);
+	snprintf(this->value, outlen, "%s%s", invsym, icl->value);
+	return this;
+}
+
+struct tnode*
 thompson_class(char *input)
 {
 	struct tnode *this = tnode_create(NT_CLASS);
@@ -171,7 +194,7 @@ thompson_class(char *input)
 
 typedef struct tnode * (*thompson_parser_func)(char *);
 
-struct tnode *
+struct tnode*
 thompson_bracketed(enum tnode_type type, thompson_parser_func func, char *input)
 {
 	char *brackets;
@@ -202,7 +225,7 @@ thompson_bracketed(enum tnode_type type, thompson_parser_func func, char *input)
 	return this;
 }
 
-struct tnode *
+struct tnode*
 thompson_basic(char *pos)
 {
 	switch (pos[0]) {
@@ -219,7 +242,7 @@ thompson_basic(char *pos)
 bool
 isclosure(char c) { return c == '*' || c == '+' || c == '?'; }
 
-struct tnode *
+struct tnode*
 thompson_closed(char *input)
 {
 	char *pos = input;
@@ -252,7 +275,7 @@ thompson_closed(char *input)
 }
 
 
-struct tnode *
+struct tnode*
 thompson_rest(char *input)
 {
 	if (thompson_atend(input)) { // ε
@@ -279,7 +302,7 @@ thompson_rest(char *input)
 }
 
 
-struct tnode *
+struct tnode*
 thompson_concat(char *input)
 {
 	char *pos = input;
@@ -296,7 +319,7 @@ thompson_concat(char *input)
 }
 
 
-struct tnode *
+struct tnode*
 thompson_union(char *input)
 {
 	if (thompson_atend(input)) { // ε
@@ -322,7 +345,7 @@ thompson_union(char *input)
 }
 
 
-struct tnode *
+struct tnode*
 thompson_parse(char *input)
 {
 	char *pos = input;
@@ -340,7 +363,7 @@ thompson_parse(char *input)
 }
 
 
-struct tnode *
+struct tnode*
 tnode_create(enum tnode_type type)
 {
 	struct tnode *this = (struct tnode *) malloc(sizeof(struct tnode));
@@ -351,7 +374,21 @@ tnode_create(enum tnode_type type)
 	return this;
 }
 
-char *
+void
+tnode_destroy(struct tnode *this)
+{
+	if (this->left != NULL) {
+		tnode_destroy(this->left);
+	}
+	if (this->right != NULL) {
+		tnode_destroy(this->right);
+	}
+	if (this->value != NULL) {
+		free(this->value);
+	}
+}
+
+char*
 tnode_output(struct tnode *this)
 {
 	char *output;
@@ -436,18 +473,4 @@ tnode_output(struct tnode *this)
 		exit(1);
 	}
 	return output;
-}
-
-void
-tnode_destroy(struct tnode *this)
-{
-	if (this->left != NULL) {
-		tnode_destroy(this->left);
-	}
-	if (this->right != NULL) {
-		tnode_destroy(this->right);
-	}
-	if (this->value != NULL) {
-		free(this->value);
-	}
 }
