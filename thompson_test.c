@@ -13,11 +13,13 @@ void
 run(struct testcase *cs)
 {
 		struct tnode *n = thompson_parse(cs->input);
-		if (strcmp(cs->output, n->output) != 0) {
+		char *output = tnode_output(n);
+		if (strcmp(cs->output, tnode_output(n)) != 0) {
 			fprintf(stderr, "input '%s' got '%s' instead of '%s'\n",
-				cs->input, n->output, cs->output);
+				cs->input, output, cs->output);
 			exit(1);
 		}
+		free(output);
 		tnode_destroy(n);
 }
 

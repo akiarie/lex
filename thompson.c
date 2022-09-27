@@ -166,57 +166,60 @@ thompson_class(char *input)
 	int outlen = strlen(invsym) + strlen(icl->output) + 1;
 	this->output = realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", invsym, icl->output);
+	this->value = (char *) malloc(sizeof(char) * outlen);
+	snprintf(this->value, outlen, "%s", this->output);
 	return this;
 }
 
 typedef struct tnode * (*thompson_parser_func)(char *);
 
 struct tnode *
-thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
+thompson_bracketed(enum tnode_type type, thompson_parser_func func, char *input)
 {
-	char *pos = input;
+	char *brackets;
+	switch (type) {
+	case NT_BASIC_EXPR:
+		brackets = "()";
+		break;
+	case NT_BASIC_CLASS:
+		brackets = "[]";
+		break;
+	case NT_BASIC_ID:
+		brackets = "{}";
+		break;
+	default:
+		fprintf(stderr, "invalid bracket type '%d'", type);
+		exit(1);
+	}
+	char *pos = input + 1;
 	struct tnode *this = func(pos);
+	this->type = type;
 	pos += this->len;
 	if (pos[0] != brackets[1]) {
 		fprintf(stderr, "can't find closing bracket '%c'", brackets[1]);
 		exit(1);
 	}
+	pos++;
+	int outlen = strlen(this->output) + 2 + 1; // 2 brackets
+	char *output = (char *) malloc(sizeof(char) * outlen);
+	snprintf(output, outlen, "%c%s%c", brackets[0], this->output,
+		brackets[1]);
+	free(this->output);
+	this->output = output;
+	this->len = pos - input;
 	return this;
 }
 
-char *
-thompson_enbracket(char *brackets, char *value)
-{
-	int outlen = strlen(value) + 2 + 1; // 2 brackets
-	char *output = (char *) malloc(sizeof(char) * outlen);
-	snprintf(output, outlen, "%c%s%c", brackets[0], value, brackets[1]);
-	return output;
-}
-
 struct tnode *
-thompson_basic(char *input)
+thompson_basic(char *pos)
 {
-	char *pos = input;
-	struct tnode *child;
 	switch (pos[0]) {
 	case '(':
-		child = thompson_bracketed("()", thompson_parse, ++pos);
-		pos += child->len + 1; // closing bracket
-		child->len = pos - input;
-		child->output = thompson_enbracket("()", child->output);
-		return child;
+		return thompson_bracketed(NT_BASIC_EXPR, thompson_parse, pos);
 	case '[':
-		child = thompson_bracketed("[]", thompson_class, ++pos);
-		pos += child->len + 1; // closing bracket
-		child->len = pos - input;
-		child->output = thompson_enbracket("[]", child->output);
-		return child;
+		return thompson_bracketed(NT_BASIC_CLASS, thompson_class, pos);
 	case '{':
-		child = thompson_bracketed("{}", thompson_id, ++pos);
-		pos += child->len + 1; // closing bracket
-		child->len = pos - input;
-		child->output = thompson_enbracket("{}", child->output);
-		return child;
+		return thompson_bracketed(NT_BASIC_ID, thompson_id, pos);
 	}
 	return thompson_symbol(pos);
 }
@@ -360,6 +363,8 @@ thompson_parse(char *input)
 	int outlen = strlen(l->output) + strlen(r->output) + 1;
 	this->output = (char *) realloc(this->output, sizeof(char) * outlen);
 	snprintf(this->output, outlen, "%s%s", l->output, r->output);
+	this->value = (char *) malloc(sizeof(char) * outlen);
+	snprintf(this->value, outlen, "%s", this->output);
 	return this;
 }
 
@@ -383,41 +388,88 @@ tnode_printf(struct tnode *this)
 		this->output);
 }
 
-void
+char *
 tnode_output(struct tnode *this)
 {
+	char *output;
+	char *l;
+	char *r;
+	int len;
 	switch (this->type) {
-	case NT_EXPR:
-	case NT_CONCAT:
-		tnode_output(this->left);
-		tnode_output(this->right);
+	case NT_EXPR: case NT_CONCAT:
+		l = tnode_output(this->left);
+		r = tnode_output(this->right);
+		len = strlen(l) + strlen(r) + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "%s%s", l, r);
+		printf("'%s', '%s'\n", l, r);
+		/*free(l);*/
+		/*free(r);*/
 		break;
 
 	case NT_UNION:
-		printf("|");
-		tnode_output(this->left);
-		tnode_output(this->right);
+		l = tnode_output(this->left);
+		r = tnode_output(this->right);
+		len = strlen(l) + strlen(r) + 1 + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "|%s%s", l, r);
+		/*free(l);*/
+		/*free(r);*/
 		break;
 	case NT_REST:
-		printf(".");
-		tnode_output(this->left);
-		tnode_output(this->right);
+		l = tnode_output(this->left);
+		r = tnode_output(this->right);
+		len = strlen(l) + strlen(r) + 1 + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, ".%s%s", l, r);
+		/*free(l);*/
+		/*free(r);*/
 		break;
 
 	case NT_CLOSED:
-		tnode_output(this->left);
-		if (this->value != NULL) {
-			printf("%s", this->value);
+		l = tnode_output(this->left);
+		if (this->value == NULL) {
+			len = strlen(l) + 1;
+			output = (char *) malloc(sizeof(char) * len);
+			snprintf(output, len, "%s", l);
+		} else {
+			len = strlen(l) + strlen(this->value) + 1;
+			output = (char *) malloc(sizeof(char) * len);
+			snprintf(output, len, "%s%s", l, this->value);
 		}
+		/*free(l);*/
 		break;
 
+	case NT_BASIC_EXPR:
+		len = strlen(this->value) + 2 + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "(%s)", this->value);
+		break;
+	case NT_BASIC_CLASS:
+		len = strlen(this->value) + 2 + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "[%s]", this->value);
+		break;
+	case NT_BASIC_ID:
+		len = strlen(this->value) + 2 + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "{%s}", this->value);
+		break;
+
+	case NT_SYMBOL:
+		len = strlen(this->value) + 1;
+		output = (char *) malloc(sizeof(char) * len);
+		snprintf(output, len, "%s", this->value);
+		break;
 
 	case NT_EMPTY:
 		break;
 
 	default:
-		break;
+		fprintf(stderr, "cannot output type %d\n", this->type);
+		exit(1);
 	}
+	return output;
 }
 
 void
