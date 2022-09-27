@@ -19,7 +19,6 @@
  *		| [ class ]
  *		| { id }
  *		| symbol
- *		| ε
  *
  *	class	→ inclass | ^ inclass
  *	inclass	→ atom inclass
@@ -38,25 +37,23 @@
 enum tnode_type {
 	NT_EXPR		= 1 << 0,
 	NT_UNION	= 1 << 1,
-	NT_UNION_EMPTY	= 1 << 2,
 
 	NT_CONCAT	= 1 << 3,
 	NT_REST		= 1 << 4,
-	NT_REST_EMPTY	= 1 << 5,
 
-	NT_CLOSED	= 1 << 6,
+	NT_CLOSED	= 1 << 5,
 
-	NT_BASIC_EMPTY	= 1 << 7,
+	NT_BASIC	= 1 << 6,
 
-	NT_CLASS	= 1 << 8,
-	NT_INCLASS	= 1 << 9,
-	NT_RANGE	= 1 << 10,
+	NT_CLASS	= 1 << 7,
+	NT_INCLASS	= 1 << 8,
+	NT_RANGE	= 1 << 9,
 
-	NT_ID		= 1 << 11,
+	NT_ID		= 1 << 10,
 
-	NT_SYMBOL	= 1 << 12,
+	NT_SYMBOL	= 1 << 11,
 
-	NT_EMPTY	= 1 << 13, // ε
+	NT_EMPTY	= 1 << 12, // ε
 };
 
 struct tnode {

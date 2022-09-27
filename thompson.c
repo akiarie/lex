@@ -174,37 +174,49 @@ typedef struct tnode * (*thompson_parser_func)(char *);
 struct tnode *
 thompson_bracketed(char *brackets, thompson_parser_func func, char *input)
 {
-	char *pos = input + 1;
+	char *pos = input;
 	struct tnode *this = func(pos);
 	pos += this->len;
 	if (pos[0] != brackets[1]) {
 		fprintf(stderr, "can't find closing bracket '%c'", brackets[1]);
 		exit(1);
 	}
-	pos++;
-	int outlen = strlen(this->output) + 2 + 1; // 2 brackets
-	char *output = (char *) malloc(sizeof(char) * outlen);
-	snprintf(output, outlen, "%c%s%c", brackets[0], this->output,
-			brackets[1]);
-	free(this->output);
-	this->output = output;
-	this->len = pos - input;
 	return this;
 }
 
-struct tnode *
-thompson_basic(char *pos)
+char *
+thompson_enbracket(char *brackets, char *value)
 {
-	if (thompson_atend(pos)) { // ε
-		return tnode_create(NT_BASIC_EMPTY);
-	}
+	int outlen = strlen(value) + 2 + 1; // 2 brackets
+	char *output = (char *) malloc(sizeof(char) * outlen);
+	snprintf(output, outlen, "%c%s%c", brackets[0], value, brackets[1]);
+	return output;
+}
+
+struct tnode *
+thompson_basic(char *input)
+{
+	char *pos = input;
+	struct tnode *child;
 	switch (pos[0]) {
 	case '(':
-		return thompson_bracketed("()", thompson_parse, pos);
+		child = thompson_bracketed("()", thompson_parse, ++pos);
+		pos += child->len + 1; // closing bracket
+		child->len = pos - input;
+		child->output = thompson_enbracket("()", child->output);
+		return child;
 	case '[':
-		return thompson_bracketed("[]", thompson_class, pos);
+		child = thompson_bracketed("[]", thompson_class, ++pos);
+		pos += child->len + 1; // closing bracket
+		child->len = pos - input;
+		child->output = thompson_enbracket("[]", child->output);
+		return child;
 	case '{':
-		return thompson_bracketed("{}", thompson_id, pos);
+		child = thompson_bracketed("{}", thompson_id, ++pos);
+		pos += child->len + 1; // closing bracket
+		child->len = pos - input;
+		child->output = thompson_enbracket("{}", child->output);
+		return child;
 	}
 	return thompson_symbol(pos);
 }
@@ -221,10 +233,13 @@ thompson_closed(char *input)
 		return NULL;
 	}
 	pos += basic->len;
-	char c = pos[0];
 	char *output = basic->output;
+	char *value = NULL;
 	if (!thompson_atend(pos)) {
+		char c = pos[0];
 		if (isclosure(c)) {
+			value = (char *) malloc(sizeof(char) * 2);
+			snprintf(value, 2, "%c", c);
 			pos += 1;
 			if (!thompson_atend(pos) && (isclosure(pos[0]))) {
 				fprintf(stderr, "double closures not allowed\n");
@@ -236,8 +251,7 @@ thompson_closed(char *input)
 		}
 	}
 	struct tnode *this = tnode_create(NT_CLOSED);
-	this->value = (char *) malloc(sizeof(char) * 2);
-	snprintf(this->value, 2, "%c", c);
+	this->value = value;
 	this->left = basic;
 	this->len = pos - input;
 	int outlen = strlen(output) + 1; // '.'
@@ -251,18 +265,18 @@ struct tnode *
 thompson_rest(char *input)
 {
 	if (thompson_atend(input)) { // ε
-		return tnode_create(NT_REST_EMPTY);
+		return tnode_create(NT_EMPTY);
 	}
 
 	char *pos = input;
 	struct tnode *l = thompson_closed(pos);
 	if (l == NULL) {
-		return tnode_create(NT_REST_EMPTY);
+		return tnode_create(NT_EMPTY);
 	}
 	pos += l->len;
 	struct tnode *r = thompson_rest(pos);
 	if (r == NULL) {
-		return tnode_create(NT_REST_EMPTY);
+		return tnode_create(NT_EMPTY);
 	}
 	pos += r->len;
 
@@ -303,7 +317,7 @@ struct tnode *
 thompson_union(char *input)
 {
 	if (thompson_atend(input)) { // ε
-		return tnode_create(NT_UNION_EMPTY);
+		return tnode_create(NT_EMPTY);
 	}
 
 	if (input[0] != '|') {
@@ -367,6 +381,43 @@ tnode_printf(struct tnode *this)
 {
 	printf("{len: %d\tval: %s\toutput: %s}\n", this->len, this->value,
 		this->output);
+}
+
+void
+tnode_output(struct tnode *this)
+{
+	switch (this->type) {
+	case NT_EXPR:
+	case NT_CONCAT:
+		tnode_output(this->left);
+		tnode_output(this->right);
+		break;
+
+	case NT_UNION:
+		printf("|");
+		tnode_output(this->left);
+		tnode_output(this->right);
+		break;
+	case NT_REST:
+		printf(".");
+		tnode_output(this->left);
+		tnode_output(this->right);
+		break;
+
+	case NT_CLOSED:
+		tnode_output(this->left);
+		if (this->value != NULL) {
+			printf("%s", this->value);
+		}
+		break;
+
+
+	case NT_EMPTY:
+		break;
+
+	default:
+		break;
+	}
 }
 
 void
