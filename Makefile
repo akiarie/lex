@@ -1,11 +1,14 @@
 CC = cc
-OBJECTS = main.o thompson.o
+OBJECTS = main.o thompson.o automata.o
 
 lex: $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS)
 
 thompson.o: thompson.c thompson.h
 	$(CC) -c thompson.c
+
+automata.o: automata.c automata.h thompson.h
+	$(CC) -c automata.c
 
 main.o: main.c thompson.h
 	$(CC) -c main.c

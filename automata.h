@@ -1,19 +1,36 @@
 #ifndef LEX_AUTOMATA
 #define LEX_AUTOMATA
+#include<stdbool.h>
 
-struct nfa {
+struct edge {
+	char *symbol;
+	struct fsm **states[];
 };
 
-struct nfa*
-automata_compute(char *);
+struct fsm {
+	bool accepting;
+	struct edge **edges[];
+};
 
-struct nfa*
-automata_concat(struct nfa *, struct nfa *);
+struct fsm*
+fsm_create(bool accepting, struct edge *edges[]);
 
-struct nfa*
-automata_or(struct nfa *, struct nfa *);
+void
+fsm_destroy(struct fsm *);
 
-struct nfa*
-automata_closure(struct nfa *, char closure);
+struct fsm*
+fsm_trans(struct fsm *state, char *input);
+
+struct fsm*
+automata_fromstring(char *);
+
+struct fsm*
+automata_concat(struct fsm *, struct fsm *);
+
+struct fsm*
+automata_or(struct fsm *, struct fsm *);
+
+struct fsm*
+automata_closure(struct fsm *, char closure);
 
 #endif
