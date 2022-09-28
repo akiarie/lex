@@ -4,16 +4,16 @@
 struct nfa {
 };
 
-struct nfa *
+struct nfa*
 automata_compute(char *);
 
-struct nfa *
+struct nfa*
 automata_concat(struct nfa *, struct nfa *);
 
-struct nfa *
+struct nfa*
 automata_or(struct nfa *, struct nfa *);
 
-struct nfa *
+struct nfa*
 automata_closure(struct nfa *, char closure);
 
 #endif
