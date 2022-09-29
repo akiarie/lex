@@ -140,7 +140,8 @@ fsm_create(bool accepting, int nedges)
 	return s;
 }
 
-void fsm_destroy(struct fsm *s)
+void
+fsm_destroy(struct fsm *s)
 {
 	if (s->edges != NULL) {
 		for (int i = 0; i < s->nedges; i++) {
