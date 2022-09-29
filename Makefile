@@ -13,11 +13,13 @@ automata.o: automata.c automata.h thompson.h
 main.o: main.c thompson.h
 	$(CC) -c main.c
 
-# test
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
-check: thompson_test
+automata_test: automata_test.c automata.o
+	$(CC) -o $@ automata_test.c automata.o
+
+check: thompson_test automata_test
 	@./run-tests.sh
 
 clean-tests: 

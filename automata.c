@@ -15,17 +15,31 @@ edge_create(char *symbol, struct fsm *states[])
 }
 
 struct fsm*
+automata_or(struct fsm *a, struct fsm *b)
+{
+	fprintf(stderr, "OR NOT IMPLEMENTED");
+	exit(1);
+}
+
+struct fsm*
+automata_concat(struct fsm *a, struct fsm *b)
+{
+	fprintf(stderr, "CONCAT NOT IMPLEMENTED");
+	exit(1);
+}
+
+struct fsm*
 automata_closure(struct fsm *basic, char closure)
 {
-		fprintf(stderr, "CLOSURE NOT IMPLEMENTED");
-		exit(1);
+	fprintf(stderr, "CLOSURE NOT IMPLEMENTED");
+	exit(1);
 }
 
 struct fsm*
 automata_fromclass(struct tnode* class)
 {
-		fprintf(stderr, "CLASS NOT IMPLEMENTED");
-		exit(1);
+	fprintf(stderr, "CLASS NOT IMPLEMENTED");
+	exit(1);
 }
 
 struct fsm*
