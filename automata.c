@@ -29,28 +29,28 @@ automata_fromclass(struct tnode* class)
 }
 
 struct fsm*
-automata_convtree(struct tnode* tree)
+automata_tree_conv(struct tnode* tree)
 {
 	struct fsm *next, **states;
 	struct edge *t, **edges;
 	switch(tree->type) {
 	case NT_EXPR: case NT_UNION:
-		return automata_or(automata_convtree(tree->left),
-			automata_convtree(tree->right));
+		return automata_or(automata_tree_conv(tree->left),
+			automata_tree_conv(tree->right));
 
 	case NT_CONCAT: case NT_REST:
-		return automata_concat(automata_convtree(tree->left),
-			automata_convtree(tree->right));
+		return automata_concat(automata_tree_conv(tree->left),
+			automata_tree_conv(tree->right));
 
 	case NT_CLOSED_BLANK:
-		return automata_convtree(tree->left);
+		return automata_tree_conv(tree->left);
 
 	case NT_CLOSURE:
-		return automata_closure(automata_convtree(tree->left),
+		return automata_closure(automata_tree_conv(tree->left),
 			tree->value[0]);
 
 	case NT_BASIC_EXPR:
-		return automata_fromstring(tree->value);
+		return automata_tree_conv(tree->left);
 
 	case NT_BASIC_CLASS:
 		return automata_fromclass(tree);
@@ -80,10 +80,10 @@ automata_convtree(struct tnode* tree)
 }
 
 struct fsm*
-automata_fromstring(char *input)
+automata_string_conv(char *input)
 {
 	struct tnode* tree = thompson_parse(input);
-	return automata_convtree(tree);
+	return automata_tree_conv(tree);
 }
 
 struct fsm*

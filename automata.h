@@ -22,7 +22,7 @@ struct fsm*
 fsm_trans(struct fsm *state, char *input);
 
 struct fsm*
-automata_fromstring(char *);
+automata_string_conv(char *);
 
 struct fsm*
 automata_concat(struct fsm *, struct fsm *);
