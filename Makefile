@@ -16,8 +16,8 @@ main.o: main.c thompson.h
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
-automata_test: automata_test.c automata.o
-	$(CC) -o $@ automata_test.c automata.o
+automata_test: automata_test.c automata.o thompson.o
+	$(CC) -o $@ automata_test.c automata.o thompson.o
 
 check: thompson_test automata_test
 	@./run-tests.sh
