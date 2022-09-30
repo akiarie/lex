@@ -4,7 +4,7 @@
 
 struct edge {
 	struct fsm *state;
-	char *symbol;
+	char c;
 };
 
 struct fsm {
@@ -14,16 +14,21 @@ struct fsm {
 };
 
 struct fsm*
-fsm_create(bool accepting, int nedges);
+fsm_create(bool accepting);
 
 void
 fsm_destroy(struct fsm *);
 
 void
-fsm_realloc(struct fsm *, int nedges);
+fsm_addedge(struct fsm *, struct edge *);
 
+/* fsm_sim: simulate the fsm by returning the next state on the given input
+ * (which might be NULL) */
 struct fsm*
-fsm_trans(struct fsm *state, char *input);
+fsm_sim(struct fsm *state, char c);
+
+bool
+fsm_isaccepting(struct fsm *state);
 
 struct fsm*
 automata_string_conv(char *);
