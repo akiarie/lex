@@ -24,24 +24,24 @@ runfsmcase(struct fsm *aut, struct fsmcase *cs)
 		}
 		printf("accept '%c'\n", *c);
 	}
-	printf("\n");
 	return fsm_isaccepting(next) == cs->shouldaccept;
 }
 
 void
 run()
 {
-	struct fsm* aut = automata_string_conv("a(b|c)*d");
-	struct fsmcase cases[] = {
-		{false, "hello, world!"},
-		{true,  "abcd"},
-	};
-	for (int i = 0, len = LEN(cases); i < len; i++) {
-		if (!runfsmcase(aut, &cases[i])) {
-			fprintf(stderr, "'%s' case failed\n", cases[i].input);
-			exit(1);
-		}
-	}
+	struct fsm* aut = automata_string_conv("a(b|c)d");
+	fsm_string(aut, 0);
+	/*struct fsmcase cases[] = {*/
+		/*{false, "hello, world!"},*/
+		/*{true,  "abcd"},*/
+	/*};*/
+	/*for (int i = 0, len = LEN(cases); i < len; i++) {*/
+		/*if (!runfsmcase(aut, &cases[i])) {*/
+			/*fprintf(stderr, "'%s' case failed\n", cases[i].input);*/
+			/*exit(1);*/
+		/*}*/
+	/*}*/
 }
 
 typedef void (*testcase)(void);

@@ -18,14 +18,15 @@ edge_create(struct fsm *state, char c)
 void
 automata_final_point(struct fsm *s, struct fsm *to, bool oldremain)
 {
-	assert(to != NULL);
+	assert(s != NULL && to != NULL);
 	for (int i = 0; i < s->nedges; i++) {
 		struct fsm *st = s->edges[i]->state;
-		if (st == NULL || !st->accepting) {
-			continue;
+		assert(st != NULL);
+		automata_final_point(st, to, oldremain);
+		if (st->accepting) {
+			st->accepting = oldremain;
+			fsm_addedge(st, edge_create(to, '\0'));
 		}
-		st->accepting = oldremain;
-		fsm_addedge(st, edge_create(to, '\0'));
 	}
 }
 
@@ -161,8 +162,6 @@ fsm_addedge(struct fsm *s, struct edge *e)
 	s->edges = (struct edge **) realloc(s->edges,
 		sizeof(struct edge) * (++s->nedges));
 	s->edges[s->nedges-1] = e;
-	printf("addedge on '%c' to state with accepting == %d\n", e->c,
-		e->state->accepting);
 }
 
 struct fsm*
@@ -178,7 +177,7 @@ fsm_sim(struct fsm *s, char c)
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e->state != NULL);
-		if (e->c == '\0') {
+		if (e->c == '\0') { // ε
 			struct fsm *T = fsm_sim(e->state, c);
 			if (T == NULL) {
 				continue;
@@ -204,4 +203,27 @@ fsm_isaccepting(struct fsm *s)
 		}
 	}
 	return s->accepting;
+}
+
+int
+fsm_string(struct fsm *s, int base)
+{
+	int num = base;
+	for (int j = 0; j < base; j++) { printf("\t"); }
+	if (s->accepting) {
+		printf("[%d, Y](%d)\n", base, s->nedges);
+	} else {
+		printf("[%d](%d)\n", base, s->nedges);
+	}
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		for (int j = 0; j < base; j++) { printf("\t"); }
+		if (s->accepting) {
+			printf("--(%c)-->\n", e->c);
+		} else {
+			printf("--(%c)-->\n", e->c);
+		}
+		num += fsm_string(e->state, num + 1);
+	}
+	return s->nedges;
 }
