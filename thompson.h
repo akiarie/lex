@@ -59,6 +59,9 @@ enum tnode_type {
 	NT_EMPTY	= 1 << 14, // ε
 };
 
+char*
+tnode_type_string(enum tnode_type type);
+
 struct tnode {
 	enum tnode_type type;
 	char *value;
@@ -81,5 +84,6 @@ tnode_print(struct tnode *, int indent);
 
 struct tnode*
 thompson_parse(char *);
+
 
 #endif

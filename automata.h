@@ -3,9 +3,12 @@
 #include<stdbool.h>
 
 struct edge {
-	struct fsm *state;
+	struct fsm *dest;
 	char c;
 };
+
+struct edge*
+edge_create(struct fsm *, char c);
 
 struct fsm {
 	bool accepting;
@@ -30,6 +33,9 @@ fsm_sim(struct fsm *state, char c);
 bool
 fsm_isaccepting(struct fsm *state);
 
+int
+fsm_print(struct fsm *, int);
+
 struct fsm*
 automata_string_conv(char *);
 
@@ -41,8 +47,5 @@ automata_union(struct fsm *, struct fsm *);
 
 struct fsm*
 automata_closure(struct fsm *, char closure);
-
-int
-fsm_print(struct fsm *, int);
 
 #endif
