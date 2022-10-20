@@ -474,3 +474,92 @@ tnode_output(struct tnode *this)
 	}
 	return output;
 }
+
+char*
+thompson_prepstring(char *stack)
+{
+	int len = strlen(stack) + 1;
+	char *heap = (char *) malloc(sizeof(char) * len);
+	snprintf(heap, len, "%s", stack);
+	return heap;
+}
+
+char*
+tnode_type_string(enum tnode_type type)
+{
+	switch (type) {
+	case NT_EXPR:
+		return thompson_prepstring("expr");
+	case NT_CONCAT:
+		return thompson_prepstring("concat");
+	case NT_UNION:
+		return thompson_prepstring("union");
+	case NT_REST:
+		return thompson_prepstring("rest");
+	case NT_CLOSED_BLANK:
+		return thompson_prepstring("closed blank");
+	case NT_CLOSURE:
+		return thompson_prepstring("closure");
+	case NT_BASIC_EXPR:
+		return thompson_prepstring("basic expr");
+	case NT_BASIC_CLASS:
+		return thompson_prepstring("basic class");
+	case NT_BASIC_ID:
+		return thompson_prepstring("basic id");
+	case NT_SYMBOL:
+		return thompson_prepstring("symbol");
+	case NT_EMPTY:
+		return thompson_prepstring("empty");
+	default:
+		fprintf(stderr, "unknown type %d\n", type);
+		exit(1);
+	}
+}
+
+
+void
+thompson_indent(int len, char c)
+{
+	for (int i = 0; i < len; i++) {
+		putchar(c);
+	}
+}
+
+void
+tnode_print(struct tnode *this, int level)
+{
+	thompson_indent((level-1) * 8, ' ');
+	if (level > 0) {
+		thompson_indent(7, '-');
+		putchar('>');
+	}
+	char *type;
+	switch (this->type) {
+		case NT_SYMBOL:
+			printf("'%s'", this->value);
+			break;
+		case NT_CLOSURE:
+			printf("%s", this->value);
+			break;
+		case NT_EMPTY:
+			printf("ε");
+			break;
+		default:
+			type = tnode_type_string(this->type);
+			printf("[%s]", type);
+			free(type);
+			break;
+	}
+	printf("\n");
+	if (this->left != NULL) {
+		thompson_indent(level * 8, ' ');
+		printf("|\n");
+		tnode_print(this->left, level+1);
+	}
+	if (this->right != NULL) {
+		thompson_indent(level * 8, ' ');
+		printf("|\n");
+		tnode_print(this->right, level+1);
+	}
+}
+

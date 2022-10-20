@@ -11,27 +11,27 @@ struct fsmcase {
 	char *input;
 };
 
-bool
-runfsmcase(struct fsm *aut, struct fsmcase *cs)
-{
-	printf("test '%s' with shouldaccept == %d\n", cs->input,
-		cs->shouldaccept);
-	struct fsm *next = aut;
-	for (char *c = cs->input; *c != '\0'; c++) {
-		next = fsm_sim(next, *c);
-		if (next == NULL) {
-			break;
-		}
-		printf("accept '%c'\n", *c);
-	}
-	return fsm_isaccepting(next) == cs->shouldaccept;
-}
+/*bool*/
+/*runfsmcase(struct fsm *aut, struct fsmcase *cs)*/
+/*{*/
+	/*printf("test '%s' with shouldaccept == %d\n", cs->input,*/
+		/*cs->shouldaccept);*/
+	/*struct fsm *next = aut;*/
+	/*for (char *c = cs->input; *c != '\0'; c++) {*/
+		/*next = fsm_sim(next, *c);*/
+		/*if (next == NULL) {*/
+			/*break;*/
+		/*}*/
+		/*printf("accept '%c'\n", *c);*/
+	/*}*/
+	/*return fsm_isaccepting(next) == cs->shouldaccept;*/
+/*}*/
 
 void
 run()
 {
-	struct fsm* aut = automata_string_conv("a(b|c)d");
-	fsm_string(aut, 0);
+	struct fsm* aut = automata_string_conv("a(b|c)*d");
+	fsm_print(aut, 0);
 	/*struct fsmcase cases[] = {*/
 		/*{false, "hello, world!"},*/
 		/*{true,  "abcd"},*/

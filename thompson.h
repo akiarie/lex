@@ -76,6 +76,9 @@ tnode_destroy(struct tnode *);
 char*
 tnode_output(struct tnode *);
 
+void
+tnode_print(struct tnode *, int indent);
+
 struct tnode*
 thompson_parse(char *);
 

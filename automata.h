@@ -43,6 +43,6 @@ struct fsm*
 automata_closure(struct fsm *, char closure);
 
 int
-fsm_string(struct fsm *, int);
+fsm_print(struct fsm *, int);
 
 #endif
