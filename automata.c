@@ -105,6 +105,7 @@ fsm_addedge(struct fsm *s, struct edge *e)
 struct fsm*
 fsm_sim(struct fsm *s, char c)
 {
+	// FIXME: needs to function as NFA rather than DFA
 	assert(s != NULL);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];

@@ -8,10 +8,10 @@
 int
 main()
 {
-	struct fsm* nfa = automata_string_conv("a|b");
+	struct fsm* nfa = automata_string_conv("ac|ad");
 	printf("\n");
 	fsm_print(nfa, 0);
-	nfa = fsm_sim(nfa, 'b');
+	nfa = fsm_sim(nfa, 'a');
 	if (nfa != NULL) {
 		fsm_print(nfa, 0);
 		/*nfa = fsm_sim(nfa, 'b');*/
