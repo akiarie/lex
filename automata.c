@@ -25,7 +25,13 @@ automata_concat(struct fsm *s, struct fsm *t)
 struct fsm*
 automata_union(struct fsm *s, struct fsm *t)
 {
-	return s;
+	struct fsm *start = fsm_create(false);
+	fsm_addedge(start, edge_create(s, '\0'));
+	fsm_addedge(start, edge_create(t, '\0'));
+	struct fsm *final = fsm_create(true);
+	automata_concat(s, final);
+	automata_concat(t, final);
+	return start;
 }
 
 struct fsm*
