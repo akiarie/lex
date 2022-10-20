@@ -5,10 +5,19 @@
 #include "automata.h"
 #include "thompson.h"
 
-/* r = st */
+/* r = s·t */
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t)
 {
+	assert(!s->accepting);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		assert(e->dest != NULL);
+		if (e->dest->accepting) {
+			// FIXME: free e->dest
+			e->dest = t;
+		}
+	}
 	return s;
 }
 
