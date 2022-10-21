@@ -37,6 +37,24 @@ automata_union(struct fsm *s, struct fsm *t)
 	return start;
 }
 
+/* r = s* | s+ | s? */
+struct fsm*
+automata_closure(struct fsm *s, char c)
+{
+	switch (c) {
+	case '*':
+		// FIXME: automata_final_point(s, s, true);
+		return s;
+	case '+':
+		return automata_concat(s, automata_closure(s, '*'));
+	case '?':
+		return automata_union(fsm_create(true), s);
+	default:
+		fprintf(stderr, "'%c' is not a closure symbol\n", c);
+		exit(1);
+	}
+}
+
 struct fsm*
 automata_tree_conv(struct tnode* tree)
 {
@@ -60,6 +78,10 @@ automata_tree_conv(struct tnode* tree)
 
 	case NT_CLOSED_BLANK:
 		return automata_tree_conv(tree->left);
+
+	case NT_CLOSURE:
+		return automata_closure(automata_tree_conv(tree->left),
+			tree->value[0]);
 
 	case NT_BASIC_EXPR:
 		copy = tnode_copy(tree);

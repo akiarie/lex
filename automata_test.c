@@ -31,6 +31,7 @@ run()
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "abd"},
+		{true,  "abcccbd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		if (!runfsmcase(nfa, &cases[i])) {
