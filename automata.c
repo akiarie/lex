@@ -92,6 +92,29 @@ edge_create(struct fsm *dest, char c)
 	return t;
 }
 
+
+struct fsm*
+edge_traverse(struct edge *e, char c)
+{
+	assert(e->dest != NULL);
+	return (e->c == c) ? e->dest : fsm_sim(e->dest, c);
+}
+
+
+struct fsm*
+fsm_sim(struct fsm *s, char c)
+{
+	assert(s != NULL);
+	struct fsm *S = fsm_create(false);
+	for (int i = 0; i < s->nedges; i++) {
+		struct fsm *next = edge_traverse(s->edges[i], c);
+		if (next != NULL) {
+			fsm_addedge(S, edge_create(next, '\0'));
+		}
+	}
+	return (S->nedges > 0) ? S : NULL;
+}
+
 void
 fsm_addedge(struct fsm *s, struct edge *e)
 {
@@ -100,28 +123,6 @@ fsm_addedge(struct fsm *s, struct edge *e)
 		sizeof(struct edge) * (++s->nedges));
 	s->edges[s->nedges-1] = e;
 }
-
-
-struct fsm*
-fsm_sim(struct fsm *s, char c)
-{
-	// FIXME: needs to function as NFA rather than DFA
-	assert(s != NULL);
-	for (int i = 0; i < s->nedges; i++) {
-		struct edge *e = s->edges[i];
-		assert(e->dest != NULL);
-		if (e->c == c) {
-			return e->dest;
-		} else if (e->c == '\0') {
-			struct fsm *T = fsm_sim(e->dest, c);
-			if (T != NULL) {
-				return T;
-			}
-		}
-	}
-	return NULL;
-}
-
 
 struct fsm*
 fsm_create(bool accepting)
