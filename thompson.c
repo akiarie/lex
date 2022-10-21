@@ -388,6 +388,25 @@ tnode_destroy(struct tnode *this)
 	}
 }
 
+struct tnode*
+tnode_copy(struct tnode *this)
+{
+	struct tnode *new = tnode_create(this->type);
+	if (this->left != NULL) {
+		new->left = tnode_copy(this->left);
+	}
+	if (this->right != NULL) {
+		new->right = tnode_copy(this->right);
+	}
+	if (this->value != NULL) {
+		int len = strlen(this->value) + 1;
+		new->value = (char *) malloc(sizeof(char) * len);
+		snprintf(new->value, len, "%s", this->value);
+	}
+	new->len = this->len;
+	return new;
+}
+
 char*
 tnode_output(struct tnode *this)
 {

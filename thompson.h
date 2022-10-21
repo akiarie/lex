@@ -76,6 +76,9 @@ tnode_create(enum tnode_type);
 void
 tnode_destroy(struct tnode *);
 
+struct tnode*
+tnode_copy(struct tnode *);
+
 char*
 tnode_output(struct tnode *);
 

@@ -9,6 +9,7 @@
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t)
 {
+	assert(s != NULL && t != NULL);
 	assert(!s->accepting);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
@@ -16,6 +17,8 @@ automata_concat(struct fsm *s, struct fsm *t)
 		if (e->dest->accepting) {
 			// FIXME: free e->dest
 			e->dest = t;
+		} else { // for now only concat unaccepting
+			automata_concat(e->dest, t);
 		}
 	}
 	return s;
@@ -39,6 +42,7 @@ automata_tree_conv(struct tnode* tree)
 {
 	char *typename;
 	struct fsm *start, *final;
+	struct tnode* copy;
 	switch(tree->type) {
 	case NT_EXPR: case NT_UNION:
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
@@ -56,6 +60,11 @@ automata_tree_conv(struct tnode* tree)
 
 	case NT_CLOSED_BLANK:
 		return automata_tree_conv(tree->left);
+
+	case NT_BASIC_EXPR:
+		copy = tnode_copy(tree);
+		copy->type = NT_EXPR;
+		return automata_tree_conv(copy);
 
 	case NT_SYMBOL:
 		start = fsm_create(false);
@@ -75,7 +84,6 @@ struct fsm*
 automata_string_conv(char *input)
 {
 	struct tnode *t = thompson_parse(input);
-	tnode_print(t, 0);
 	struct fsm *nfa = automata_tree_conv(t);
 	tnode_destroy(t);
 	return nfa;
@@ -97,7 +105,12 @@ struct fsm*
 edge_traverse(struct edge *e, char c)
 {
 	assert(e->dest != NULL);
-	return (e->c == c) ? e->dest : fsm_sim(e->dest, c);
+	if (e->c == c){
+		return e->dest;
+	} else if (e->c == '\0') {
+		return fsm_sim(e->dest, c);
+	}
+	return NULL;
 }
 
 
@@ -113,6 +126,24 @@ fsm_sim(struct fsm *s, char c)
 		}
 	}
 	return (S->nedges > 0) ? S : NULL;
+}
+
+bool
+fsm_isaccepting(struct fsm *s)
+{
+	if (s == NULL) {
+		return false;
+	}
+	if (s->accepting) {
+		return true;
+	}
+	for (int i = 0; i < s->nedges; i++) {
+		struct fsm *N = edge_traverse(s->edges[i], '\0');
+		if (fsm_isaccepting(N)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void
@@ -150,29 +181,35 @@ automata_indent(int len)
 }
 
 int
-fsm_print(struct fsm *s, int base)
+fsm_print_act(struct fsm *s, int level, int thisnum)
 {
 	assert(s != NULL);
-	int num = base;
-	automata_indent(base);
+	int num = thisnum;
+	automata_indent(level);
 	if (s->accepting) {
-		printf("[%d, Y](%d)\n", base, s->nedges);
+		printf("[%d, Y](%d)\n", num, s->nedges);
 	} else {
-		printf("[%d](%d)\n", base, s->nedges);
+		printf("[%d](%d)\n", num, s->nedges);
 	}
 	if (s->nedges > 0) {
-		automata_indent(base);
+		automata_indent(level);
 		printf("|\n");
 	}
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
-		automata_indent(base);
+		automata_indent(level);
 		if (s->accepting) {
 			printf("--(%c)-->\n", e->c);
 		} else {
 			printf("--(%c)-->\n", e->c);
 		}
-		num += fsm_print(e->dest, num + 1);
+		num += fsm_print_act(e->dest, level + 1, num + 1);
 	}
 	return s->nedges;
+}
+
+int
+fsm_print(struct fsm *s)
+{
+	return fsm_print_act(s, 0, 0);
 }

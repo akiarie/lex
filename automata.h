@@ -34,7 +34,7 @@ bool
 fsm_isaccepting(struct fsm *state);
 
 int
-fsm_print(struct fsm *, int);
+fsm_print(struct fsm *);
 
 struct fsm*
 automata_string_conv(char *);
