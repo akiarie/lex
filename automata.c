@@ -41,14 +41,15 @@ automata_union(struct fsm *s, struct fsm *t)
 struct fsm*
 automata_closure(struct fsm *s, char c)
 {
+	struct fsm *closure;
 	switch (c) {
-	case '*':
-		// FIXME: automata_final_point(s, s, true);
-		return s;
-	case '+':
-		return automata_concat(s, automata_closure(s, '*'));
 	case '?':
 		return automata_union(fsm_create(true), s);
+	case '*':
+		closure = automata_closure(s, '?');
+		return automata_concat(closure, closure);
+	case '+':
+		return automata_concat(s, automata_closure(s, '*'));
 	default:
 		fprintf(stderr, "'%c' is not a closure symbol\n", c);
 		exit(1);
@@ -221,9 +222,9 @@ fsm_print_act(struct fsm *s, int level, int thisnum)
 		struct edge *e = s->edges[i];
 		automata_indent(level);
 		if (s->accepting) {
-			printf("--(%c)-->\n", e->c);
+			printf("-- %c -->\n", e->c);
 		} else {
-			printf("--(%c)-->\n", e->c);
+			printf("-- %c -->\n", e->c);
 		}
 		num += fsm_print_act(e->dest, level + 1, num + 1);
 	}
