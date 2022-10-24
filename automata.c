@@ -110,17 +110,10 @@ classlist_fromstring(char *s)
 	assert(s != '\0');
 	struct classlist *head = classlist_create(s[0]);
 	struct classlist *l = head;
-	for (s++; s != '\0'; s++) {
-		char *before = s;
+	for (s++; *s != '\0'; s++) {
 		l->next = classlist_advance(&s);
-		if (before != s) {
-			printf("%x\n", (int)s);
-			printf("before: %s\nafter: %s\nnext: '%s'\n", before, s, s+1);
-			printf("%x\n", (int)s);
-		}
 		l = l->next;
 	}
-	printf("DONE!");
 	return head;
 }
 
