@@ -30,8 +30,10 @@ run()
 	struct fsm* nfa = automata_string_conv("a(b|c)*d");
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
+		{true,  "ad"},
 		{true,  "abd"},
-		{true,  "abcccbd"},
+		{true,  "acd"},
+		{true,  "abcccccccbbcd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		if (!runfsmcase(nfa, &cases[i])) {

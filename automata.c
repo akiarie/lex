@@ -10,13 +10,11 @@ struct fsm*
 automata_concat(struct fsm *s, struct fsm *t)
 {
 	assert(s != NULL && t != NULL);
-	assert(!s->accepting);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e->dest != NULL);
 		if (e->dest->accepting) {
-			// FIXME: free e->dest
-			e->dest = t;
+			fsm_addedge(e->dest, edge_create(t, '\0'));
 		} else { // for now only concat unaccepting
 			automata_concat(e->dest, t);
 		}
@@ -47,7 +45,8 @@ automata_closure(struct fsm *s, char c)
 		return automata_union(fsm_create(true), s);
 	case '*':
 		closure = automata_closure(s, '?');
-		return automata_concat(closure, closure);
+		closure = automata_concat(closure, closure);
+		return closure;
 	case '+':
 		return automata_concat(s, automata_closure(s, '*'));
 	default:
@@ -123,32 +122,82 @@ edge_create(struct fsm *dest, char c)
 	return t;
 }
 
+struct sctracker {
+	struct fsm *s;
+	struct sctracker *next;
+};
+
+struct sctracker*
+sctracker_create(struct fsm *s)
+{
+	struct sctracker *tr = (struct sctracker *)
+		malloc(sizeof(struct sctracker));
+	tr->s = s;
+	tr->next = NULL;
+	return tr;
+}
+
+void
+sctracker_destroy(struct sctracker *this)
+{
+	assert(this != NULL);
+	if (this->next != NULL) {
+		sctracker_destroy(this->next);
+	}
+	free(this);
+}
+
+bool
+sctracker_append(struct sctracker *this, struct fsm *s)
+{
+	struct sctracker *tr, *prev;
+	for (tr = this; tr != NULL; prev = tr, tr = tr->next) {
+		if (tr->s == s) {
+			return false;
+		}
+	}
+	prev->next = sctracker_create(s);
+	return true;
+}
+
 
 struct fsm*
-edge_traverse(struct edge *e, char c)
+fsm_act_sim(struct fsm *s, struct sctracker *tr, char c);
+
+struct fsm*
+edge_traverse(struct edge *e, struct sctracker *tr, char c)
 {
 	assert(e->dest != NULL);
 	if (e->c == c){
 		return e->dest;
-	} else if (e->c == '\0') {
-		return fsm_sim(e->dest, c);
+	} else if (e->c == '\0' && sctracker_append(tr, e->dest)) {
+		return fsm_act_sim(e->dest, tr, c);
 	}
 	return NULL;
 }
 
 
 struct fsm*
-fsm_sim(struct fsm *s, char c)
+fsm_act_sim(struct fsm *s, struct sctracker *tr, char c)
 {
 	assert(s != NULL);
 	struct fsm *S = fsm_create(false);
 	for (int i = 0; i < s->nedges; i++) {
-		struct fsm *next = edge_traverse(s->edges[i], c);
+		struct fsm *next = edge_traverse(s->edges[i], tr, c);
 		if (next != NULL) {
 			fsm_addedge(S, edge_create(next, '\0'));
 		}
 	}
 	return (S->nedges > 0) ? S : NULL;
+}
+
+struct fsm*
+fsm_sim(struct fsm *s, char c)
+{
+	struct sctracker *tr = sctracker_create(s);
+	struct fsm *next = fsm_act_sim(s, tr, c);
+	sctracker_destroy(tr);
+	return next;
 }
 
 bool
@@ -161,7 +210,9 @@ fsm_isaccepting(struct fsm *s)
 		return true;
 	}
 	for (int i = 0; i < s->nedges; i++) {
-		struct fsm *N = edge_traverse(s->edges[i], '\0');
+		struct sctracker *tr = sctracker_create(s);
+		struct fsm *N = edge_traverse(s->edges[i], tr, '\0');
+		sctracker_destroy(tr);
 		if (fsm_isaccepting(N)) {
 			return true;
 		}
