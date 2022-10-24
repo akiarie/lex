@@ -27,13 +27,15 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 void
 run()
 {
-	struct fsm* nfa = automata_string_conv("a(b|c)*d");
+	struct fsm *nfa = automata_string_conv("a([bcg-z])*d");
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
 		{true,  "abd"},
 		{true,  "acd"},
 		{true,  "abcccccccbbcd"},
+		{false, "abcefd"},
+		{true,  "abcghijpqrwzzcd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		if (!runfsmcase(nfa, &cases[i])) {

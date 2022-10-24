@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<assert.h>
+#include<string.h>
 
 #include "automata.h"
 #include "thompson.h"
@@ -55,6 +56,91 @@ automata_closure(struct fsm *s, char c)
 	}
 }
 
+struct classlist {
+	char c;
+	struct classlist *next;
+};
+
+void
+classlist_destroy(struct classlist *l)
+{
+	if (l->next != NULL) {
+		classlist_destroy(l->next);
+	}
+	free(l);
+}
+
+struct classlist*
+classlist_create(char c)
+{
+	struct classlist *l = (struct classlist *) malloc(sizeof(struct classlist));
+	l->c = c;
+	l->next = NULL;
+	return l;
+}
+
+struct classlist*
+classlist_fromrange(char a, char b)
+{
+	assert(a <= b);
+	struct classlist *head = classlist_create(a);
+	struct classlist *l = head;
+	for (char c = a + 1; c != b + 1; c++) {
+		l->next = classlist_create(c);
+		l = l->next;
+	}
+	return head;
+}
+
+struct classlist*
+classlist_advance(char **sp)
+{
+	char *s = *sp;
+	if (s[1] == '-') {
+		assert(s[2] != '\0'); // assume all ranges closed
+		*sp += 2;
+		return classlist_fromrange(s[0], s[2]);
+	}
+	return classlist_create(s[0]);
+}
+
+struct classlist*
+classlist_fromstring(char *s)
+{
+	assert(s != '\0');
+	struct classlist *head = classlist_create(s[0]);
+	struct classlist *l = head;
+	for (s++; s != '\0'; s++) {
+		char *before = s;
+		l->next = classlist_advance(&s);
+		if (before != s) {
+			printf("%x\n", (int)s);
+			printf("before: %s\nafter: %s\nnext: '%s'\n", before, s, s+1);
+			printf("%x\n", (int)s);
+		}
+		l = l->next;
+	}
+	printf("DONE!");
+	return head;
+}
+
+struct fsm*
+automata_class(struct tnode *tree)
+{
+	struct classlist *list = classlist_fromstring(tree->value);
+	printf("chars: [");
+	for (struct classlist *l = list; l != NULL; l = l->next) {
+		printf("%c", l->c);
+		if (l->next != NULL) {
+			printf(", ");
+		}
+	}
+	printf("]\n");
+	classlist_destroy(list);
+	fprintf(stderr, "automata_class NOT IMPLEMENTED\n");
+	exit(1);
+}
+
 struct fsm*
 automata_tree_conv(struct tnode* tree)
 {
@@ -87,6 +173,9 @@ automata_tree_conv(struct tnode* tree)
 		copy = tnode_copy(tree);
 		copy->type = NT_EXPR;
 		return automata_tree_conv(copy);
+
+	case NT_BASIC_CLASS:
+		return automata_class(tree);
 
 	case NT_SYMBOL:
 		start = fsm_create(false);
@@ -122,13 +211,15 @@ edge_create(struct fsm *dest, char c)
 	return t;
 }
 
+/* sctracker: short circuit tracker */
 struct sctracker {
-	struct fsm *s;
+	void *s;
 	struct sctracker *next;
 };
 
+
 struct sctracker*
-sctracker_create(struct fsm *s)
+sctracker_create(void *s)
 {
 	struct sctracker *tr = (struct sctracker *)
 		malloc(sizeof(struct sctracker));
@@ -137,27 +228,28 @@ sctracker_create(struct fsm *s)
 	return tr;
 }
 
+
 void
-sctracker_destroy(struct sctracker *this)
+sctracker_destroy(struct sctracker *tr)
 {
-	assert(this != NULL);
-	if (this->next != NULL) {
-		sctracker_destroy(this->next);
+	assert(tr != NULL);
+	if (tr->next != NULL) {
+		sctracker_destroy(tr->next);
 	}
-	free(this);
+	free(tr);
 }
 
+
 bool
-sctracker_append(struct sctracker *this, struct fsm *s)
+sctracker_append(struct sctracker *tr, void *s)
 {
-	struct sctracker *tr, *prev;
-	for (tr = this; tr != NULL; prev = tr, tr = tr->next) {
-		if (tr->s == s) {
-			return false;
+	for (; tr->s != s; tr = tr->next) {
+		if (tr->next == NULL) {
+			tr->next = sctracker_create(s);
+			return true;
 		}
 	}
-	prev->next = sctracker_create(s);
-	return true;
+	return false;
 }
 
 
