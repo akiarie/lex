@@ -79,6 +79,19 @@ classlist_create(char c)
 	return l;
 }
 
+void
+classlist_print(struct classlist *l)
+{
+	printf("classlist[");
+	for (; l != NULL; l = l->next) {
+		printf("%c", l->c);
+		if (l->next != NULL) {
+			printf(", ");
+		}
+	}
+	printf("]\n");
+}
+
 struct classlist*
 classlist_fromrange(char a, char b)
 {
@@ -105,6 +118,13 @@ classlist_advance(char **sp)
 }
 
 struct classlist*
+classlist_tail(struct classlist *l)
+{
+	for (; l->next != NULL; l = l->next) {}
+	return l;
+}
+
+struct classlist*
 classlist_fromstring(char *s)
 {
 	assert(s != '\0');
@@ -112,7 +132,7 @@ classlist_fromstring(char *s)
 	struct classlist *l = head;
 	for (s++; *s != '\0'; s++) {
 		l->next = classlist_advance(&s);
-		l = l->next;
+		l = classlist_tail(l->next);
 	}
 	return head;
 }
