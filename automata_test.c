@@ -27,7 +27,7 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 void
 run()
 {
-	struct fsm *nfa = automata_string_conv("a([bcg-z])*d");
+	struct fsm *nfa = automata_string_conv("a([bcg-z0-3])*d");
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
@@ -36,6 +36,8 @@ run()
 		{true,  "abcccccccbbcd"},
 		{false, "abcefd"},
 		{true,  "abcghijpqrwzzcd"},
+		{false, "abcghi9jpqrwzzcd"},
+		{true,  "abcghi123jpqrwzzcd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		if (!runfsmcase(nfa, &cases[i])) {
