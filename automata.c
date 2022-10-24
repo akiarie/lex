@@ -121,17 +121,13 @@ struct fsm*
 automata_class(struct tnode *tree)
 {
 	struct classlist *list = classlist_fromstring(tree->value);
-	printf("chars: [");
+	struct fsm* start = fsm_create(false);
+	struct fsm* final = fsm_create(true);
 	for (struct classlist *l = list; l != NULL; l = l->next) {
-		printf("%c", l->c);
-		if (l->next != NULL) {
-			printf(", ");
-		}
+		fsm_addedge(start, edge_create(final, l->c));
 	}
-	printf("]\n");
 	classlist_destroy(list);
-	fprintf(stderr, "automata_class NOT IMPLEMENTED\n");
-	exit(1);
+	return start;
 }
 
 struct fsm*
