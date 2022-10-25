@@ -19,6 +19,9 @@ thompson_test: thompson_test.c thompson.o
 automata_test: automata_test.c automata.o thompson.o
 	$(CC) -o $@ automata_test.c automata.o thompson.o
 
+example: lex
+	@cd examples; ../lex lex.l
+
 check: thompson_test automata_test
 	@./run-tests.sh
 
@@ -28,5 +31,6 @@ clean-tests:
 clean: clean-tests
 	@rm -f lex $(OBJECTS) *.gch a.out
 	@rm -rf *.dSYM
+	@rm examples/*.yy.c
 
 .PHONY: clean clean-tests
