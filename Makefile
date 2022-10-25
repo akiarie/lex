@@ -12,7 +12,7 @@ automata.o: automata.c automata.h thompson.h
 
 util_gen.c: 
 	@xxd -n util_automata_h_file -i automata.h >> $@
-	@xxd -n util_automata_c_file -i automata.c >> $@
+	@grep -v "#include \"automata.h\"" automata.c | xxd -name util_automata_c_file -i >> $@
 
 util.o: util.c util_gen.c util.h automata.h thompson.h
 	$(CC) -c util.c util_gen.c
