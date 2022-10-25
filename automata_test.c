@@ -27,7 +27,7 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 void
 run()
 {
-	struct fsm *nfa = automata_string_conv("a([bcg-z0-3])*d");
+	struct fsmlist *l = fsmlist_create("base", "a([bcg-z0-3])*d", NULL);
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
@@ -40,7 +40,7 @@ run()
 		{true,  "abcghi123jpqrwzzcd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
-		if (!runfsmcase(nfa, &cases[i])) {
+		if (!runfsmcase(l->s, &cases[i])) {
 			fprintf(stderr, "'%s' case failed\n", cases[i].input);
 			exit(1);
 		}

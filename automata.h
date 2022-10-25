@@ -4,11 +4,9 @@
 
 struct edge {
 	struct fsm *dest;
+	bool owner;
 	char c;
 };
-
-struct edge*
-edge_create(struct fsm *, char c);
 
 struct fsm {
 	bool accepting;
@@ -36,16 +34,19 @@ fsm_isaccepting(struct fsm *state);
 int
 fsm_print(struct fsm *);
 
-struct fsm*
-automata_string_conv(char *);
+struct fsmlist {
+	char *name;
+	struct fsm *s;
+	struct fsmlist *next;
+};
 
-struct fsm*
-automata_concat(struct fsm *, struct fsm *);
+struct fsmlist*
+fsmlist_create(char *name, char *regex, struct fsmlist *base);
 
-struct fsm*
-automata_union(struct fsm *, struct fsm *);
+void
+fsmlist_destroy(struct fsmlist *);
 
-struct fsm*
-automata_closure(struct fsm *, char closure);
+void
+fsmlist_append(struct fsmlist *, struct fsmlist *);
 
 #endif

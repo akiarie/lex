@@ -6,6 +6,27 @@
 #include "automata.h"
 #include "thompson.h"
 
+struct edge*
+edge_create(struct fsm *dest, char c, bool owner)
+{
+	assert(dest != NULL);
+	struct edge *e = (struct edge *) malloc(sizeof(struct edge));
+	e->c = c;
+	e->dest = dest;
+	e->owner = owner;
+	return e;
+}
+
+void edge_destroy(struct edge *e)
+{
+	assert(e->dest != NULL);
+	if (e->owner) {
+		fsm_destroy(e->dest);
+	}
+	free(e);
+}
+
+
 /* r = s·t */
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t)
@@ -15,7 +36,7 @@ automata_concat(struct fsm *s, struct fsm *t)
 		struct edge *e = s->edges[i];
 		assert(e->dest != NULL);
 		if (e->dest->accepting) {
-			fsm_addedge(e->dest, edge_create(t, '\0'));
+			fsm_addedge(e->dest, edge_create(t, '\0', false));
 		} else { // for now only concat unaccepting
 			automata_concat(e->dest, t);
 		}
@@ -28,8 +49,8 @@ struct fsm*
 automata_union(struct fsm *s, struct fsm *t)
 {
 	struct fsm *start = fsm_create(false);
-	fsm_addedge(start, edge_create(s, '\0'));
-	fsm_addedge(start, edge_create(t, '\0'));
+	fsm_addedge(start, edge_create(s, '\0', true));
+	fsm_addedge(start, edge_create(t, '\0', true));
 	struct fsm *final = fsm_create(true);
 	automata_concat(s, final);
 	automata_concat(t, final);
@@ -144,14 +165,14 @@ automata_class(struct tnode *tree)
 	struct fsm* start = fsm_create(false);
 	struct fsm* final = fsm_create(true);
 	for (struct classlist *l = list; l != NULL; l = l->next) {
-		fsm_addedge(start, edge_create(final, l->c));
+		fsm_addedge(start, edge_create(final, l->c, false));
 	}
 	classlist_destroy(list);
 	return start;
 }
 
 struct fsm*
-automata_tree_conv(struct tnode* tree)
+automata_tree_conv(struct tnode* tree, struct fsmlist *l)
 {
 	char *typename;
 	struct fsm *start, *final;
@@ -159,36 +180,37 @@ automata_tree_conv(struct tnode* tree)
 	switch(tree->type) {
 	case NT_EXPR: case NT_UNION:
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_tree_conv(tree->left);
+			return automata_tree_conv(tree->left, l);
 		}
-		return automata_union(automata_tree_conv(tree->left),
-			automata_tree_conv(tree->right));
+		return automata_union(automata_tree_conv(tree->left, l),
+			automata_tree_conv(tree->right, l));
 
 	case NT_CONCAT: case NT_REST:
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_tree_conv(tree->left);
+			return automata_tree_conv(tree->left, l);
 		}
-		return automata_concat(automata_tree_conv(tree->left),
-			automata_tree_conv(tree->right));
+		return automata_concat(automata_tree_conv(tree->left, l),
+			automata_tree_conv(tree->right, l));
 
 	case NT_CLOSED_BLANK:
-		return automata_tree_conv(tree->left);
+		return automata_tree_conv(tree->left, l);
 
 	case NT_CLOSURE:
-		return automata_closure(automata_tree_conv(tree->left),
+		return automata_closure(automata_tree_conv(tree->left, l),
 			tree->value[0]);
 
 	case NT_BASIC_EXPR:
 		copy = tnode_copy(tree);
 		copy->type = NT_EXPR;
-		return automata_tree_conv(copy);
+		return automata_tree_conv(copy, l);
 
 	case NT_BASIC_CLASS:
 		return automata_class(tree);
 
 	case NT_SYMBOL:
 		start = fsm_create(false);
-		fsm_addedge(start, edge_create(fsm_create(true), tree->value[0]));
+		fsm_addedge(start, edge_create(fsm_create(true), tree->value[0],
+			true));
 		return start;
 
 	default:
@@ -201,24 +223,14 @@ automata_tree_conv(struct tnode* tree)
 
 
 struct fsm*
-automata_string_conv(char *input)
+automata_string_conv(char *input, struct fsmlist *l)
 {
 	struct tnode *t = thompson_parse(input);
-	struct fsm *nfa = automata_tree_conv(t);
+	struct fsm *nfa = automata_tree_conv(t, l);
 	tnode_destroy(t);
 	return nfa;
 }
 
-
-struct edge*
-edge_create(struct fsm *dest, char c)
-{
-	assert(dest != NULL);
-	struct edge *t = (struct edge *) malloc(sizeof(struct edge));
-	t->c = c;
-	t->dest = dest;
-	return t;
-}
 
 /* sctracker: short circuit tracker */
 struct sctracker {
@@ -286,7 +298,7 @@ fsm_act_sim(struct fsm *s, struct sctracker *tr, char c)
 	for (int i = 0; i < s->nedges; i++) {
 		struct fsm *next = edge_traverse(s->edges[i], tr, c);
 		if (next != NULL) {
-			fsm_addedge(S, edge_create(next, '\0'));
+			fsm_addedge(S, edge_create(next, '\0', false));
 		}
 	}
 	return (S->nedges > 0) ? S : NULL;
@@ -343,8 +355,14 @@ fsm_create(bool accepting)
 void
 fsm_destroy(struct fsm *s)
 {
-	fprintf(stderr, "fsm_destroy not implemented\n");
+	fprintf(stderr, "fsm_destroy is NOT IMPLEMENTED\n");
 	exit(1);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		assert(e->dest != NULL);
+		edge_destroy(e);
+	}
+	free(s);
 }
 
 void
@@ -387,4 +405,27 @@ int
 fsm_print(struct fsm *s)
 {
 	return fsm_print_act(s, 0, 0);
+}
+
+
+struct fsmlist*
+fsmlist_create(char *name, char *regex, struct fsmlist *base)
+{
+	struct fsmlist *l = (struct fsmlist *) malloc(sizeof(struct fsmlist));
+	l->name = name;
+	l->s = automata_string_conv(regex, base);
+	return l;
+}
+
+
+void
+fsmlist_destroy(struct fsmlist *l)
+{
+	assert(l->s != NULL && l->name != NULL);
+	if (l->next != NULL) {
+		fsmlist_destroy(l->next);
+	}
+	free(l->name);
+	fsm_destroy(l->s);
+	free(l);
 }
