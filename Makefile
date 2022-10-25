@@ -10,6 +10,7 @@ thompson.o: thompson.c thompson.h
 automata.o: automata.c automata.h thompson.h
 	$(CC) -c automata.c
 
+# avails the automata library so that util can generate code that refers to it
 util_gen.c: 
 	@xxd -n util_automata_h_file -i automata.h >> $@
 	@grep -v "#include \"automata.h\"" automata.c | xxd -name util_automata_c_file -i >> $@
