@@ -40,13 +40,14 @@ struct fsmlist {
 	struct fsmlist *next;
 };
 
-struct fsmlist*
-fsmlist_create(char *name, char *regex, struct fsmlist *base);
+struct fsm*
+automata_fromstring(char *regex, struct fsmlist *);
+
+/* creates a list if NULL pointer is supplied */
+struct fsmlist *
+fsmlist_append(struct fsmlist *, char *name, struct fsm *s);
 
 void
 fsmlist_destroy(struct fsmlist *);
-
-void
-fsmlist_append(struct fsmlist *, struct fsmlist *);
 
 #endif

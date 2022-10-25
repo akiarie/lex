@@ -25,9 +25,9 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 }
 
 void
-run()
+simple_expressions()
 {
-	struct fsmlist *l = fsmlist_create("base", "a([bcg-z0-3])*d", NULL);
+	struct fsm *s = automata_fromstring("a([bcg-z0-3])*d", NULL);
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
@@ -40,10 +40,27 @@ run()
 		{true,  "abcghi123jpqrwzzcd"},
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
-		if (!runfsmcase(l->s, &cases[i])) {
+		if (!runfsmcase(s, &cases[i])) {
 			fprintf(stderr, "'%s' case failed\n", cases[i].input);
 			exit(1);
 		}
+	}
+}
+
+void
+piglatin()
+{
+	struct { char *name; char *regex; } patterns[] = {
+		{"letter",	"[A-Za-z]"},
+		{"vowel",	"[AEIOUaeiou]"},
+		{"cons",	"[BCDFGHJKLMNPQRSTVWXYZbcdfghjklmnpqrstvwxyz]"},
+		{"vword",	"{vowel}{letter}*"},
+		{"cword",	"{cons}{letter}*"},
+	};
+	struct fsmlist *l = NULL;
+	for (int i = 0; i < LEN(patterns); i++) {
+		struct fsm *s = automata_fromstring(patterns[i].regex, l);
+		l = fsmlist_append(l, patterns[i].name, s);
 	}
 }
 
@@ -53,7 +70,8 @@ int
 main()
 {
 	testcase cases[] = {
-		run,
+		simple_expressions,
+		piglatin,
 	};
 	for (int i = 0, len = LEN(cases); i < len; i++) {
 		cases[i]();

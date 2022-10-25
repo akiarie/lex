@@ -172,7 +172,20 @@ automata_class(struct tnode *tree)
 }
 
 struct fsm*
-automata_tree_conv(struct tnode* tree, struct fsmlist *l)
+automata_id(char *id, struct fsmlist *l)
+{
+	assert(l != NULL);
+	for (; l != NULL; l = l->next) {
+		if (strcmp(id, l->name) == 0) {
+			return l->s;
+		}
+	}
+	fprintf(stderr, "unknown pattern '%s' has not been declared\n", id);
+	exit(1);
+}
+
+struct fsm*
+automata_fromtree(struct tnode* tree, struct fsmlist *l)
 {
 	char *typename;
 	struct fsm *start, *final;
@@ -180,32 +193,35 @@ automata_tree_conv(struct tnode* tree, struct fsmlist *l)
 	switch(tree->type) {
 	case NT_EXPR: case NT_UNION:
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_tree_conv(tree->left, l);
+			return automata_fromtree(tree->left, l);
 		}
-		return automata_union(automata_tree_conv(tree->left, l),
-			automata_tree_conv(tree->right, l));
+		return automata_union(automata_fromtree(tree->left, l),
+			automata_fromtree(tree->right, l));
 
 	case NT_CONCAT: case NT_REST:
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_tree_conv(tree->left, l);
+			return automata_fromtree(tree->left, l);
 		}
-		return automata_concat(automata_tree_conv(tree->left, l),
-			automata_tree_conv(tree->right, l));
+		return automata_concat(automata_fromtree(tree->left, l),
+			automata_fromtree(tree->right, l));
 
 	case NT_CLOSED_BLANK:
-		return automata_tree_conv(tree->left, l);
+		return automata_fromtree(tree->left, l);
 
 	case NT_CLOSURE:
-		return automata_closure(automata_tree_conv(tree->left, l),
+		return automata_closure(automata_fromtree(tree->left, l),
 			tree->value[0]);
 
 	case NT_BASIC_EXPR:
 		copy = tnode_copy(tree);
 		copy->type = NT_EXPR;
-		return automata_tree_conv(copy, l);
+		return automata_fromtree(copy, l);
 
 	case NT_BASIC_CLASS:
 		return automata_class(tree);
+
+	case NT_BASIC_ID:
+		return automata_id(tree->value, l);
 
 	case NT_SYMBOL:
 		start = fsm_create(false);
@@ -223,12 +239,12 @@ automata_tree_conv(struct tnode* tree, struct fsmlist *l)
 
 
 struct fsm*
-automata_string_conv(char *input, struct fsmlist *l)
+automata_fromstring(char *input, struct fsmlist *l)
 {
 	struct tnode *t = thompson_parse(input);
-	struct fsm *nfa = automata_tree_conv(t, l);
+	struct fsm *s = automata_fromtree(t, l);
 	tnode_destroy(t);
-	return nfa;
+	return s;
 }
 
 
@@ -409,14 +425,33 @@ fsm_print(struct fsm *s)
 
 
 struct fsmlist*
-fsmlist_create(char *name, char *regex, struct fsmlist *base)
+fsmlist_create(char *name, struct fsm *s)
 {
 	struct fsmlist *l = (struct fsmlist *) malloc(sizeof(struct fsmlist));
 	l->name = name;
-	l->s = automata_string_conv(regex, base);
+	l->s = s;
+	l->next = NULL;
 	return l;
 }
 
+struct fsmlist*
+fsmlist_tail(struct fsmlist *l)
+{
+	for (; l->next != NULL; l = l->next) {}
+	return l;
+}
+
+struct fsmlist*
+fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
+{
+	struct fsmlist *next = fsmlist_create(name, s);
+	if (l == NULL) {
+		return next;
+	}
+	struct fsmlist *tail = fsmlist_tail(l);
+	tail->next = next;
+	return l;
+}
 
 void
 fsmlist_destroy(struct fsmlist *l)
