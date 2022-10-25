@@ -4,6 +4,7 @@
 
 #include "automata.h"
 #include "thompson.h"
+#include "util_gen.c"
 
 struct fsm*
 util_fsm_fromtree(struct tnode* tree, struct fsmlist *l)

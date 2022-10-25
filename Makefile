@@ -10,8 +10,12 @@ thompson.o: thompson.c thompson.h
 automata.o: automata.c automata.h thompson.h
 	$(CC) -c automata.c
 
-util.o: util.c util.h automata.h thompson.h
-	$(CC) -c util.c
+util_gen.c: 
+	@xxd -n automata_c_file -i automata.c >> $@
+	@xxd -n automata_h_file -i automata.h >> $@
+
+util.o: util.c util_gen.c util.h automata.h thompson.h
+	$(CC) -c util.c util_gen.c
 
 main.o: main.c util.h thompson.h
 	$(CC) -c main.c
@@ -35,5 +39,6 @@ clean: clean-tests
 	@rm -f lex $(OBJECTS) *.gch a.out
 	@rm -rf *.dSYM
 	@rm -rf examples/*.yy.c
+	@rm -rf util_gen.c
 
 .PHONY: clean clean-tests
