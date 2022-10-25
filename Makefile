@@ -1,5 +1,5 @@
 CC = cc
-OBJECTS = main.o thompson.o automata.o
+OBJECTS = main.o util.o thompson.o automata.o
 
 lex: $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS)
@@ -10,14 +10,17 @@ thompson.o: thompson.c thompson.h
 automata.o: automata.c automata.h thompson.h
 	$(CC) -c automata.c
 
-main.o: main.c thompson.h
+util.o: util.c util.h automata.h thompson.h
+	$(CC) -c util.c
+
+main.o: main.c util.h thompson.h
 	$(CC) -c main.c
 
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
-automata_test: automata_test.c automata.o thompson.o
-	$(CC) -o $@ automata_test.c automata.o thompson.o
+automata_test: automata_test.c util.o automata.o thompson.o
+	$(CC) -o $@ automata_test.c util.o automata.o thompson.o
 
 example: lex
 	@cd examples; ../lex lex.l
@@ -31,6 +34,6 @@ clean-tests:
 clean: clean-tests
 	@rm -f lex $(OBJECTS) *.gch a.out
 	@rm -rf *.dSYM
-	@rm examples/*.yy.c
+	@rm -rf examples/*.yy.c
 
 .PHONY: clean clean-tests

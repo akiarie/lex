@@ -8,6 +8,9 @@ struct edge {
 	char c;
 };
 
+struct edge*
+edge_create(struct fsm*, char, bool);
+
 struct fsm {
 	bool accepting;
 	int nedges;
@@ -40,14 +43,29 @@ struct fsmlist {
 	struct fsmlist *next;
 };
 
-struct fsm*
-automata_fromstring(char *regex, struct fsmlist *);
-
 /* creates a list if NULL pointer is supplied */
-struct fsmlist *
+struct fsmlist*
 fsmlist_append(struct fsmlist *, char *name, struct fsm *s);
 
 void
 fsmlist_destroy(struct fsmlist *);
+
+struct fsmlist*
+fsmlist_copy(struct fsmlist *);
+
+struct fsm*
+automata_concat(struct fsm *, struct fsm *);
+
+struct fsm*
+automata_union(struct fsm *, struct fsm *);
+
+struct fsm*
+automata_closure(struct fsm *, char closure);
+
+struct fsm*
+automata_class(char *value);
+
+struct fsm*
+automata_id(char *id, struct fsmlist *l);
 
 #endif

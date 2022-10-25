@@ -3,6 +3,7 @@
 #include<strings.h>
 
 #include "automata.h"
+#include "util.h"
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -37,7 +38,7 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = automata_fromstring("a([bcg-z0-3])*d", NULL);
+	struct fsm *s = util_fsm_fromstring("a([bcg-z0-3])*d", NULL);
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
@@ -64,7 +65,7 @@ piglatin()
 	};
 	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = automata_fromstring(patterns[i].regex, list);
+		struct fsm *s = util_fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, patterns[i].name, s);
 	}
 	struct fsmlist *m = list;

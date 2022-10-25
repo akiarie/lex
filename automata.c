@@ -4,7 +4,6 @@
 #include<string.h>
 
 #include "automata.h"
-#include "thompson.h"
 
 struct edge*
 edge_create(struct fsm *dest, char c, bool owner)
@@ -159,9 +158,9 @@ classlist_fromstring(char *s)
 }
 
 struct fsm*
-automata_class(struct tnode *tree)
+automata_class(char *value)
 {
-	struct classlist *list = classlist_fromstring(tree->value);
+	struct classlist *list = classlist_fromstring(value);
 	struct fsm* start = fsm_create(false);
 	struct fsm* final = fsm_create(true);
 	for (struct classlist *l = list; l != NULL; l = l->next) {
@@ -181,69 +180,6 @@ automata_id(char *id, struct fsmlist *l)
 	}
 	fprintf(stderr, "unknown pattern '%s' has not been declared\n", id);
 	exit(1);
-}
-
-struct fsm*
-automata_fromtree(struct tnode* tree, struct fsmlist *l)
-{
-	char *typename;
-	struct fsm *start, *final;
-	struct tnode* copy;
-	switch(tree->type) {
-	case NT_EXPR: case NT_UNION:
-		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_fromtree(tree->left, l);
-		}
-		return automata_union(automata_fromtree(tree->left, l),
-			automata_fromtree(tree->right, l));
-
-	case NT_CONCAT: case NT_REST:
-		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
-			return automata_fromtree(tree->left, l);
-		}
-		return automata_concat(automata_fromtree(tree->left, l),
-			automata_fromtree(tree->right, l));
-
-	case NT_CLOSED_BLANK:
-		return automata_fromtree(tree->left, l);
-
-	case NT_CLOSURE:
-		return automata_closure(automata_fromtree(tree->left, l),
-			tree->value[0]);
-
-	case NT_BASIC_EXPR:
-		copy = tnode_copy(tree);
-		copy->type = NT_EXPR;
-		return automata_fromtree(copy, l);
-
-	case NT_BASIC_CLASS:
-		return automata_class(tree);
-
-	case NT_BASIC_ID:
-		return automata_id(tree->value, l);
-
-	case NT_SYMBOL:
-		start = fsm_create(false);
-		fsm_addedge(start, edge_create(fsm_create(true), tree->value[0],
-			true));
-		return start;
-
-	default:
-		typename = tnode_type_string(tree->type);
-		fprintf(stderr, "unknown type %s\n", typename);
-		free(typename);
-		exit(1);
-	}
-}
-
-
-struct fsm*
-automata_fromstring(char *input, struct fsmlist *l)
-{
-	struct tnode *t = thompson_parse(input);
-	struct fsm *s = automata_fromtree(t, l);
-	tnode_destroy(t);
-	return s;
 }
 
 
