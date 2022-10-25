@@ -174,7 +174,6 @@ automata_class(struct tnode *tree)
 struct fsm*
 automata_id(char *id, struct fsmlist *l)
 {
-	assert(l != NULL);
 	for (; l != NULL; l = l->next) {
 		if (strcmp(id, l->name) == 0) {
 			return l->s;

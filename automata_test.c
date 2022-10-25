@@ -24,6 +24,16 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 	return fsm_isaccepting(next) == cs->shouldaccept;
 }
 
+void run_cases(struct fsmcase cases[], int len, struct fsm *s)
+{
+	for (int i = 0; i < len; i++) {
+		if (!runfsmcase(s, &cases[i])) {
+			fprintf(stderr, "'%s' case failed\n", cases[i].input);
+			exit(1);
+		}
+	}
+}
+
 void
 simple_expressions()
 {
@@ -39,12 +49,7 @@ simple_expressions()
 		{false, "abcghi9jpqrwzzcd"},
 		{true,  "abcghi123jpqrwzzcd"},
 	};
-	for (int i = 0, len = LEN(cases); i < len; i++) {
-		if (!runfsmcase(s, &cases[i])) {
-			fprintf(stderr, "'%s' case failed\n", cases[i].input);
-			exit(1);
-		}
-	}
+	run_cases(cases, LEN(cases), s);
 }
 
 void
@@ -57,23 +62,43 @@ piglatin()
 		{"vword",	"{vowel}{letter}*"},
 		{"cword",	"{cons}{letter}*"},
 	};
-	struct fsmlist *l = NULL;
+	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = automata_fromstring(patterns[i].regex, l);
-		l = fsmlist_append(l, patterns[i].name, s);
+		struct fsm *s = automata_fromstring(patterns[i].regex, list);
+		list = fsmlist_append(list, patterns[i].name, s);
 	}
+	struct fsmlist *m = list;
+	for (; strcmp("vword", m->name) != 0; m = m->next) {}
+	struct fsm *vword = m->s;
+	struct fsmcase vcases[] = {
+		{false, "baaaooaoa"},
+		{true,  "abwerqasd"},
+		{true,  "ebwerqasd"},
+		{true,  "ibwerqasd"},
+	};
+	run_cases(vcases, LEN(vcases), vword);
+	for (m = list; strcmp("cword", m->name) != 0; m = m->next) {}
+	struct fsm *cword = m->s;
+	struct fsmcase ccases[] = {
+		{false, "abcefd"},
+		{false, "ebcghi9jpqrwzzcd"},
+		{true,  "basdfaue"},
+		{true,  "gasdfaue"},
+		{true,  "hasdfaue"},
+	};
+	run_cases(ccases, LEN(ccases), cword);
 }
 
-typedef void (*testcase)(void);
+typedef void (*test)(void);
 
 int
 main()
 {
-	testcase cases[] = {
+	test tests[] = {
 		simple_expressions,
 		piglatin,
 	};
-	for (int i = 0, len = LEN(cases); i < len; i++) {
-		cases[i]();
+	for (int i = 0, len = LEN(tests); i < len; i++) {
+		tests[i]();
 	}
 }
