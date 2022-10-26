@@ -23,6 +23,7 @@ sctracker_create(void *s)
 	return tr;
 }
 
+
 struct sctracker*
 sctracker_copy(struct sctracker *tr)
 {
