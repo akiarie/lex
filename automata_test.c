@@ -38,19 +38,21 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = util_fsm_fromstring("a([bcg-z0-3])*d", NULL);
+	/*struct fsm *s = util_fsm_fromstring("a([bcg-z0-3])*d", NULL);*/
+	struct fsm *s = util_fsm_fromstring("a*d", NULL);
+	fsm_print(s);
 	struct fsmcase cases[] = {
-		{false, "hello, world!"},
+		/*{false, "hello, world!"},*/
 		{true,  "ad"},
-		{true,  "abd"},
-		{true,  "acd"},
-		{true,  "abcccccccbbcd"},
-		{false, "abcefd"},
-		{true,  "abcghijpqrwzzcd"},
-		{false, "abcghi9jpqrwzzcd"},
-		{true,  "abcghi123jpqrwzzcd"},
-		{false, "a"},
-		{false, "abcgh"},
+		/*{true,  "abd"},*/
+		/*{true,  "acd"},*/
+		/*{true,  "abcccccccbbcd"},*/
+		/*{false, "abcefd"},*/
+		/*{true,  "abcghijpqrwzzcd"},*/
+		/*{false, "abcghi9jpqrwzzcd"},*/
+		/*{true,  "abcghi123jpqrwzzcd"},*/
+		/*{false, "a"},*/
+		/*{false, "abcgh"},*/
 	};
 	run_cases(cases, LEN(cases), s);
 }

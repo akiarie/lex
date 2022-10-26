@@ -34,7 +34,7 @@ fsm_sim(struct fsm *state, char c);
 bool
 fsm_isaccepting(struct fsm *state);
 
-int
+void
 fsm_print(struct fsm *);
 
 struct fsmlist {

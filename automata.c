@@ -257,13 +257,12 @@ struct fsm*
 edge_traverse(struct edge *e, char c, struct sctracker *tr)
 {
 	assert(e->dest != NULL);
-	if (e->c == '\0') {
-		if (sctracker_append(tr, e->dest)) {
-			return fsm_act_sim(e->dest, tr, c);
-		}
-		return NULL;
+	if (e->c == c) {
+		return e->dest;
+	} else if (e->c == '\0' && sctracker_append(tr, e->dest)) {
+		return fsm_act_sim(e->dest, tr, c);
 	}
-	return (e->c == c) ? e->dest : NULL;
+	return NULL;
 }
 
 
@@ -351,7 +350,7 @@ automata_indent(int len)
 }
 
 int
-fsm_print_act(struct fsm *s, int level, int thisnum)
+fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
 {
 	assert(s != NULL);
 	int num = thisnum;
@@ -368,20 +367,22 @@ fsm_print_act(struct fsm *s, int level, int thisnum)
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		automata_indent(level);
-		if (s->accepting) {
-			printf("-- %c -->\n", e->c);
-		} else {
-			printf("-- %c -->\n", e->c);
+		printf("-- %c -->\n", e->c);
+		struct sctracker *trnew = sctracker_copy(tr);
+		if (!sctracker_append(trnew, s->edges[i])) {
+			num += fsm_print_act(e->dest, level + 1, num + 1, trnew);
 		}
-		num += fsm_print_act(e->dest, level + 1, num + 1);
+		sctracker_destroy(trnew);
 	}
 	return s->nedges;
 }
 
-int
+void
 fsm_print(struct fsm *s)
 {
-	return fsm_print_act(s, 0, 0);
+	struct sctracker *tr = sctracker_create(s);
+	fsm_print_act(s, 0, 0, tr);
+	sctracker_destroy(tr);
 }
 
 
