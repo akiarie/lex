@@ -13,7 +13,7 @@ automata.o: automata.c automata.h thompson.h
 # avails the automata library so that util can generate code that refers to it
 util_gen.c: 
 	@cat automata.h automata.c \
-		| grep -v "#include \"automata.h\"" - \
+		| grep -v '#include "automata.h"' - \
 		| xxd -name util_automata_file -i - > $@
 
 util.o: util.c util_gen.c util.h automata.h thompson.h
