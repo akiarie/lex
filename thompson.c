@@ -545,7 +545,7 @@ thompson_indent(int len, char c)
 }
 
 void
-tnode_print(struct tnode *this, int level)
+tnode_print_act(struct tnode *this, int level)
 {
 	thompson_indent((level-1) * 8, ' ');
 	if (level > 0) {
@@ -573,12 +573,17 @@ tnode_print(struct tnode *this, int level)
 	if (this->left != NULL) {
 		thompson_indent(level * 8, ' ');
 		printf("|\n");
-		tnode_print(this->left, level+1);
+		tnode_print_act(this->left, level+1);
 	}
 	if (this->right != NULL) {
 		thompson_indent(level * 8, ' ');
 		printf("|\n");
-		tnode_print(this->right, level+1);
+		tnode_print_act(this->right, level+1);
 	}
 }
 
+void
+tnode_print(struct tnode *this)
+{
+	return tnode_print_act(this, 0);
+}

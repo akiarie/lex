@@ -1,4 +1,4 @@
-CC = cc
+CC = cc -g
 OBJECTS = main.o util.o thompson.o automata.o
 
 lex: $(OBJECTS)

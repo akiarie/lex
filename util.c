@@ -73,35 +73,95 @@ util_fsm_fromstring(char *input, struct fsmlist *l)
 int
 util_numlen(int num)
 {
-	if (num == 0) {
-		return 1;
-	}
+	assert(num >= 0);
 	int len = 1;
-	for (int k = num; k > 0; k /= 10) {
+	for (int k = num; k >= 10; k /= 10) {
 		len++;
 	}
 	return len;
 }
 
-char *
+#define LEX_NAME_FSM "ln_fsm"
+#define LEX_NAME_EDGE "ln_edge"
+
+char*
 util_name(char *type, int num)
 {
-	num = 124112;
 	int len = strlen(type) + util_numlen(num) + 1;
 	char *name = (char *) malloc(sizeof(char) * len);
 	snprintf(name, len, "%s%d", type, num);
 	return name;
 }
 
-char *
+char*
+util_proper_char(char c)
+{
+	int len;
+	char *s;
+	if (c == '\0') {
+		len = 2 + 1;
+		s = (char *) malloc(sizeof(char) * len);
+		snprintf(s, len, "\\0");
+	} else {
+		len = 1 + 1;
+		s = (char *) malloc(sizeof(char) * len);
+		snprintf(s, len, "%c", c);
+	}
+	return s;
+}
+
+struct genresult {
+	int num;
+	char *lval;
+};
+
+struct genresult*
+genresult_create(int num, char *lval)
+{
+	struct genresult *r = (struct genresult *) malloc(sizeof(struct genresult));
+	r->num = num;
+	r->lval = lval;
+	return r;
+}
+
+void
+genresult_destroy(struct genresult *r)
+{
+	free(r->lval);
+	free(r);
+}
+
+struct genresult*
+util_gen_automaton(struct fsm *s, int num);
+
+struct genresult*
+util_gen_edge(struct edge *e, int num)
+{
+	assert(e->dest != NULL);
+	struct genresult *r = util_gen_automaton(e->dest, num);
+	num = r->num;
+	char *name = util_name(LEX_NAME_EDGE, num++);
+	char *c = util_proper_char(e->c);
+	printf("struct edge *%s = edge_create(%s, '%s', %s);\n", name, r->lval,
+		c, e->owner ? "true" : "false");
+	free(c);
+	genresult_destroy(r);
+	return genresult_create(num, name);
+}
+
+struct genresult*
 util_gen_automaton(struct fsm *s, int num)
 {
-	char *name = util_name("fsm", num);
-	printf("struct fsm %s {\n", name);
-	printf("\t.accepting = %s,\n", s->accepting ? "true" : "false");
-	printf("\t.nedges = %d,\n", s->nedges);
-	printf("};\n");
-	return name;
+	char *name = util_name(LEX_NAME_FSM, num++);
+	printf("struct fsm *%s = fsm_create(%s);\n", name,
+		s->accepting ? "true" : "false");
+	for (int i = 0; i < s->nedges; i++) {
+		struct genresult *r = util_gen_edge(s->edges[i], num);
+		num = r->num;
+		printf("fsm_addedge(%s, %s);\n", name, r->lval);
+		genresult_destroy(r);
+	}
+	return genresult_create(num, name);
 }
 
 void
@@ -114,10 +174,11 @@ void
 util_gen(struct fsmlist *l, char *varname, FILE *out)
 {
 	printf("\n/* BEGIN */\n\n");
-	char *s0 = util_gen_automaton(l->s, 0);
-	printf("struct fsm *%s = %s;\n", varname, s0);
+	struct genresult *r = util_gen_automaton(l->s, 0);
+	printf("struct fsm *%s = %s;\n", varname, r->lval);
+	genresult_destroy(r);
 	printf("\n");
-	util_gen_driver(s0);
+	util_gen_driver(varname);
 	printf("\n");
 	printf("/* fsm_destroy(%s); */\n", varname);
 	printf("\n/* END */\n");

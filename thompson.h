@@ -83,7 +83,7 @@ char*
 tnode_output(struct tnode *);
 
 void
-tnode_print(struct tnode *, int indent);
+tnode_print(struct tnode *);
 
 struct tnode*
 thompson_parse(char *);

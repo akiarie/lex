@@ -49,6 +49,8 @@ simple_expressions()
 		{true,  "abcghijpqrwzzcd"},
 		{false, "abcghi9jpqrwzzcd"},
 		{true,  "abcghi123jpqrwzzcd"},
+		{false, "a"},
+		{false, "abcgh"},
 	};
 	run_cases(cases, LEN(cases), s);
 }
@@ -97,9 +99,10 @@ main()
 {
 	test tests[] = {
 		simple_expressions,
-		piglatin,
+		/*piglatin,*/
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();
 	}
+
 }

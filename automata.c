@@ -5,6 +5,58 @@
 
 #include "automata.h"
 
+
+/* sctracker: short circuit tracker */
+struct sctracker {
+	void *s;
+	struct sctracker *next;
+};
+
+
+struct sctracker*
+sctracker_create(void *s)
+{
+	struct sctracker *tr = (struct sctracker *)
+		malloc(sizeof(struct sctracker));
+	tr->s = s;
+	tr->next = NULL;
+	return tr;
+}
+
+struct sctracker*
+sctracker_copy(struct sctracker *tr)
+{
+	struct sctracker *new = sctracker_create(tr->s);
+	if (tr->next != NULL) {
+		new->next = sctracker_copy(tr->next);
+	}
+	return new;
+}
+
+
+void
+sctracker_destroy(struct sctracker *tr)
+{
+	assert(tr != NULL);
+	if (tr->next != NULL) {
+		sctracker_destroy(tr->next);
+	}
+	free(tr);
+}
+
+
+bool
+sctracker_append(struct sctracker *tr, void *s)
+{
+	for (; tr->s != s; tr = tr->next) {
+		if (tr->next == NULL) {
+			tr->next = sctracker_create(s);
+			return true;
+		}
+	}
+	return false;
+}
+
 struct edge*
 edge_create(struct fsm *dest, char c, bool owner)
 {
@@ -25,22 +77,36 @@ void edge_destroy(struct edge *e)
 	free(e);
 }
 
+struct fsm*
+automata_concat_act(struct fsm *s, struct fsm *t, struct sctracker *tr)
+{
+	assert(s != NULL && t != NULL);
+	if (s->accepting) {
+		assert(s->nedges == 0);
+		s->accepting = false;
+		fsm_addedge(s, edge_create(t, '\0', false));
+		return s;
+	}
+	struct sctracker *trnew = sctracker_copy(tr);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		if (e->dest != t && sctracker_append(trnew, e->dest)) {
+			automata_concat_act(e->dest, t, trnew);
+		}
+	}
+	sctracker_destroy(trnew);
+	return s;
+}
+
 
 /* r = s·t */
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t)
 {
-	assert(s != NULL && t != NULL);
-	for (int i = 0; i < s->nedges; i++) {
-		struct edge *e = s->edges[i];
-		assert(e->dest != NULL);
-		if (e->dest->accepting) {
-			fsm_addedge(e->dest, edge_create(t, '\0', false));
-		} else { // for now only concat unaccepting
-			automata_concat(e->dest, t);
-		}
-	}
-	return s;
+	struct sctracker *tr = sctracker_create(s);
+	struct fsm *next = automata_concat_act(s, t, tr);
+	sctracker_destroy(tr);
+	return next;
 }
 
 /* r = s | t */
@@ -183,61 +249,20 @@ automata_id(char *id, struct fsmlist *l)
 }
 
 
-/* sctracker: short circuit tracker */
-struct sctracker {
-	void *s;
-	struct sctracker *next;
-};
-
-
-struct sctracker*
-sctracker_create(void *s)
-{
-	struct sctracker *tr = (struct sctracker *)
-		malloc(sizeof(struct sctracker));
-	tr->s = s;
-	tr->next = NULL;
-	return tr;
-}
-
-
-void
-sctracker_destroy(struct sctracker *tr)
-{
-	assert(tr != NULL);
-	if (tr->next != NULL) {
-		sctracker_destroy(tr->next);
-	}
-	free(tr);
-}
-
-
-bool
-sctracker_append(struct sctracker *tr, void *s)
-{
-	for (; tr->s != s; tr = tr->next) {
-		if (tr->next == NULL) {
-			tr->next = sctracker_create(s);
-			return true;
-		}
-	}
-	return false;
-}
-
-
 struct fsm*
 fsm_act_sim(struct fsm *s, struct sctracker *tr, char c);
 
 struct fsm*
-edge_traverse(struct edge *e, struct sctracker *tr, char c)
+edge_traverse(struct edge *e, char c, struct sctracker *tr)
 {
 	assert(e->dest != NULL);
-	if (e->c == c){
-		return e->dest;
-	} else if (e->c == '\0' && sctracker_append(tr, e->dest)) {
-		return fsm_act_sim(e->dest, tr, c);
+	if (e->c == '\0') {
+		if (sctracker_append(tr, e->dest)) {
+			return fsm_act_sim(e->dest, tr, c);
+		}
+		return NULL;
 	}
-	return NULL;
+	return (e->c == c) ? e->dest : NULL;
 }
 
 
@@ -247,7 +272,7 @@ fsm_act_sim(struct fsm *s, struct sctracker *tr, char c)
 	assert(s != NULL);
 	struct fsm *S = fsm_create(false);
 	for (int i = 0; i < s->nedges; i++) {
-		struct fsm *next = edge_traverse(s->edges[i], tr, c);
+		struct fsm *next = edge_traverse(s->edges[i], c, tr);
 		if (next != NULL) {
 			fsm_addedge(S, edge_create(next, '\0', false));
 		}
@@ -275,9 +300,9 @@ fsm_isaccepting(struct fsm *s)
 	}
 	for (int i = 0; i < s->nedges; i++) {
 		struct sctracker *tr = sctracker_create(s);
-		struct fsm *N = edge_traverse(s->edges[i], tr, '\0');
+		struct fsm *next = edge_traverse(s->edges[i], '\0', tr);
 		sctracker_destroy(tr);
-		if (fsm_isaccepting(N)) {
+		if (fsm_isaccepting(next)) {
 			return true;
 		}
 	}
