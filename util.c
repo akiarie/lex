@@ -68,3 +68,38 @@ util_fsm_fromstring(char *input, struct fsmlist *l)
 	tnode_destroy(t);
 	return s;
 }
+
+void
+util_gen_automaton(struct fsm *s, int num)
+{
+	struct fsm b = {
+		.accepting = false,
+		.nedges	= 29,
+		.edges = &(struct edge *) {
+			&(struct edge) {
+				.dest = NULL,
+				.owner = false,
+				.c = 'a',
+			},
+		},
+	};
+;
+
+	printf("struct fsm {\n");
+	printf("\t.accepting = %s,\n", s->accepting ? "true" : "false");
+	printf("\t.nedges = %d,\n", s->nedges);
+	printf("\t.edges = &(struct edge *) {\n");
+	printf("\t\t&(struct edge) {\n");
+	printf("\t\t\t.dest = NULL,\n");
+	printf("\t\t\t.owner = false,\n");
+	printf("\t\t\t.c = 'a',\n");
+	printf("\t\t},\n");
+	printf("\t},\n");
+	printf("};\n");
+}
+
+void
+util_gen(struct fsmlist *l, char *varname, FILE *out)
+{
+	util_gen_automaton(l->s, 0);
+}

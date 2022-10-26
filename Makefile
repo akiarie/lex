@@ -28,17 +28,20 @@ thompson_test: thompson_test.c thompson.o
 automata_test: automata_test.c util.o automata.o thompson.o
 	$(CC) -o $@ automata_test.c util.o automata.o thompson.o
 
+util_test: util_test.c util.o automata.o thompson.o
+	$(CC) -o $@ util_test.c util.o automata.o thompson.o
+
 example: lex
 	@cd examples; ../lex lex.l
 
-check: thompson_test automata_test
+check: thompson_test automata_test util_test
 	@./run-tests.sh
 
 clean-tests: 
-	@rm -f thompson_test
+	@rm -f *_test
 
 clean: clean-tests
-	@rm -f lex $(OBJECTS) *.gch a.out
+	@rm -f lex $(OBJECTS) util_gen.o *.gch a.out
 	@rm -rf *.dSYM
 	@rm -rf examples/*.yy.c
 	@rm -rf util_gen.c
