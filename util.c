@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<assert.h>
+#include<string.h>
 
 #include "automata.h"
 #include "thompson.h"
@@ -69,37 +70,55 @@ util_fsm_fromstring(char *input, struct fsmlist *l)
 	return s;
 }
 
-void
+int
+util_numlen(int num)
+{
+	if (num == 0) {
+		return 1;
+	}
+	int len = 1;
+	for (int k = num; k > 0; k /= 10) {
+		len++;
+	}
+	return len;
+}
+
+char *
+util_name(char *type, int num)
+{
+	num = 124112;
+	int len = strlen(type) + util_numlen(num) + 1;
+	char *name = (char *) malloc(sizeof(char) * len);
+	snprintf(name, len, "%s%d", type, num);
+	return name;
+}
+
+char *
 util_gen_automaton(struct fsm *s, int num)
 {
-	struct fsm b = {
-		.accepting = false,
-		.nedges	= 29,
-		.edges = &(struct edge *) {
-			&(struct edge) {
-				.dest = NULL,
-				.owner = false,
-				.c = 'a',
-			},
-		},
-	};
-;
-
-	printf("struct fsm {\n");
+	char *name = util_name("fsm", num);
+	printf("struct fsm %s {\n", name);
 	printf("\t.accepting = %s,\n", s->accepting ? "true" : "false");
 	printf("\t.nedges = %d,\n", s->nedges);
-	printf("\t.edges = &(struct edge *) {\n");
-	printf("\t\t&(struct edge) {\n");
-	printf("\t\t\t.dest = NULL,\n");
-	printf("\t\t\t.owner = false,\n");
-	printf("\t\t\t.c = 'a',\n");
-	printf("\t\t},\n");
-	printf("\t},\n");
 	printf("};\n");
+	return name;
+}
+
+void
+util_gen_driver(char *name)
+{
+	printf("/* driver code based on %s */\n", name);
 }
 
 void
 util_gen(struct fsmlist *l, char *varname, FILE *out)
 {
-	util_gen_automaton(l->s, 0);
+	printf("\n/* BEGIN */\n\n");
+	char *s0 = util_gen_automaton(l->s, 0);
+	printf("struct fsm *%s = %s;\n", varname, s0);
+	printf("\n");
+	util_gen_driver(s0);
+	printf("\n");
+	printf("/* fsm_destroy(%s); */\n", varname);
+	printf("\n/* END */\n");
 }
