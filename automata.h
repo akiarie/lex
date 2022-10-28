@@ -26,14 +26,6 @@ fsm_destroy(struct fsm *);
 void
 fsm_addedge(struct fsm *, struct edge *);
 
-/* fsm_sim: simulate the fsm by returning the next state on the given input
- * (which might be NULL) */
-struct fsm*
-fsm_sim(struct fsm *state, char c);
-
-bool
-fsm_isaccepting(struct fsm *state);
-
 void
 fsm_print(struct fsm *);
 
@@ -42,6 +34,12 @@ struct fsmlist {
 	struct fsm *s;
 	struct fsmlist *next;
 };
+
+struct fsmlist*
+fsmlist_sim(struct fsmlist *states, char c);
+
+bool
+fsmlist_accepting(struct fsmlist *);
 
 /* creates a list if NULL pointer is supplied */
 struct fsmlist*
@@ -54,7 +52,7 @@ struct fsmlist*
 fsmlist_copy(struct fsmlist *);
 
 struct fsm*
-automata_concat(struct fsm *, struct fsm *);
+automata_concat(struct fsm *, struct fsm *, bool);
 
 struct fsm*
 automata_union(struct fsm *, struct fsm *);

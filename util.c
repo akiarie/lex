@@ -26,7 +26,7 @@ util_fsm_fromtree(struct tnode* tree, struct fsmlist *l)
 			return util_fsm_fromtree(tree->left, l);
 		}
 		return automata_concat(util_fsm_fromtree(tree->left, l),
-			util_fsm_fromtree(tree->right, l));
+			util_fsm_fromtree(tree->right, l), true);
 
 	case NT_CLOSED_BLANK:
 		return util_fsm_fromtree(tree->left, l);

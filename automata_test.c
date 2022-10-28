@@ -15,14 +15,16 @@ struct fsmcase {
 bool
 runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 {
-	struct fsm *next = nfa;
+	struct fsmlist *l = fsmlist_append(NULL, "", nfa);
 	for (char *c = cs->input; *c != '\0'; c++) {
-		next = fsm_sim(next, *c);
-		if (next == NULL) {
+		l = fsmlist_sim(l, *c);
+		if (l == NULL) {
 			break;
 		}
 	}
-	return fsm_isaccepting(next) == cs->shouldaccept;
+	bool response = fsmlist_accepting(l) == cs->shouldaccept;
+	fsmlist_destroy(l);
+	return response;
 }
 
 void run_cases(struct fsmcase cases[], int len, struct fsm *s)
@@ -38,23 +40,12 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	/*struct fsm *s = util_fsm_fromstring("a([bcg-z0-3])*d", NULL);*/
-	struct fsm *s = util_fsm_fromstring("a*d", NULL);
-	fsm_print(s);
+	struct fsm *s = util_fsm_fromstring("a", NULL);
 	struct fsmcase cases[] = {
-		/*{false, "hello, world!"},*/
-		{true,  "ad"},
-		/*{true,  "abd"},*/
-		/*{true,  "acd"},*/
-		/*{true,  "abcccccccbbcd"},*/
-		/*{false, "abcefd"},*/
-		/*{true,  "abcghijpqrwzzcd"},*/
-		/*{false, "abcghi9jpqrwzzcd"},*/
-		/*{true,  "abcghi123jpqrwzzcd"},*/
-		/*{false, "a"},*/
-		/*{false, "abcgh"},*/
+		{true,  "a"},
 	};
 	run_cases(cases, LEN(cases), s);
+	fsm_destroy(s);
 }
 
 void

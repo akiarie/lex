@@ -78,36 +78,12 @@ void edge_destroy(struct edge *e)
 	free(e);
 }
 
-struct fsm*
-automata_concat_act(struct fsm *s, struct fsm *t, struct sctracker *tr)
-{
-	assert(s != NULL && t != NULL);
-	if (s->accepting) {
-		assert(s->nedges == 0);
-		s->accepting = false;
-		fsm_addedge(s, edge_create(t, '\0', false));
-		return s;
-	}
-	struct sctracker *trnew = sctracker_copy(tr);
-	for (int i = 0; i < s->nedges; i++) {
-		struct edge *e = s->edges[i];
-		if (e->dest != t && sctracker_append(trnew, e->dest)) {
-			automata_concat_act(e->dest, t, trnew);
-		}
-	}
-	sctracker_destroy(trnew);
-	return s;
-}
-
-
 /* r = s·t */
 struct fsm*
-automata_concat(struct fsm *s, struct fsm *t)
+automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
-	struct sctracker *tr = sctracker_create(s);
-	struct fsm *next = automata_concat_act(s, t, tr);
-	sctracker_destroy(tr);
-	return next;
+	fprintf(stderr, "automata_concat NOT IMPLEMENTED\n");
+	exit(1);
 }
 
 /* r = s | t */
@@ -118,8 +94,8 @@ automata_union(struct fsm *s, struct fsm *t)
 	fsm_addedge(start, edge_create(s, '\0', true));
 	fsm_addedge(start, edge_create(t, '\0', true));
 	struct fsm *final = fsm_create(true);
-	automata_concat(s, final);
-	automata_concat(t, final);
+	automata_concat(s, final, true);
+	automata_concat(t, final, false);
 	return start;
 }
 
@@ -133,10 +109,10 @@ automata_closure(struct fsm *s, char c)
 		return automata_union(fsm_create(true), s);
 	case '*':
 		closure = automata_closure(s, '?');
-		closure = automata_concat(closure, closure);
+		closure = automata_concat(closure, closure, false);
 		return closure;
 	case '+':
-		return automata_concat(s, automata_closure(s, '*'));
+		return automata_concat(s, automata_closure(s, '*'), false);
 	default:
 		fprintf(stderr, "'%c' is not a closure symbol\n", c);
 		exit(1);
@@ -249,64 +225,39 @@ automata_id(char *id, struct fsmlist *l)
 	exit(1);
 }
 
-
-struct fsm*
-fsm_act_sim(struct fsm *s, struct sctracker *tr, char c);
-
-struct fsm*
-edge_traverse(struct edge *e, char c, struct sctracker *tr)
+struct fsmlist*
+fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 {
-	assert(e->dest != NULL);
-	if (e->c == c) {
-		return e->dest;
-	} else if (e->c == '\0' && sctracker_append(tr, e->dest)) {
-		return fsm_act_sim(e->dest, tr, c);
-	}
-	return NULL;
+	fprintf(stderr, "fsmlist_epsclosure_act NOT IMPLEMENTED\n");
+	exit(1);
 }
 
-
-struct fsm*
-fsm_act_sim(struct fsm *s, struct sctracker *tr, char c)
-{
-	assert(s != NULL);
-	struct fsm *S = fsm_create(false);
-	for (int i = 0; i < s->nedges; i++) {
-		struct fsm *next = edge_traverse(s->edges[i], c, tr);
-		if (next != NULL) {
-			fsm_addedge(S, edge_create(next, '\0', false));
-		}
-	}
-	return (S->nedges > 0) ? S : NULL;
-}
-
-struct fsm*
-fsm_sim(struct fsm *s, char c)
+struct fsmlist*
+fsm_epsclosure(struct fsm *s)
 {
 	struct sctracker *tr = sctracker_create(s);
-	struct fsm *next = fsm_act_sim(s, tr, c);
+	struct fsmlist *l = fsm_epsclosure_act(s, tr);
 	sctracker_destroy(tr);
-	return next;
+	return l;
 }
 
-bool
-fsm_isaccepting(struct fsm *s)
+struct fsmlist*
+fsm_move(struct fsm *s, char c)
 {
-	if (s == NULL) {
-		return false;
-	}
-	if (s->accepting) {
-		return true;
-	}
+	assert(c != '\0');
+	struct fsmlist *l;
 	for (int i = 0; i < s->nedges; i++) {
-		struct sctracker *tr = sctracker_create(s);
-		struct fsm *next = edge_traverse(s->edges[i], '\0', tr);
-		sctracker_destroy(tr);
-		if (fsm_isaccepting(next)) {
-			return true;
+		struct edge *e = s->edges[i];
+		assert(e != NULL);
+		if (e->c == c) {
+			// name must be heap-allocated because of
+			// fsmlist_destroy's expectations
+			char *name = (char *) malloc(sizeof(char));
+			*name = '\0';
+			l = fsmlist_append(l, name, e->dest);
 		}
 	}
-	return false;
+	return l;
 }
 
 void
@@ -331,8 +282,6 @@ fsm_create(bool accepting)
 void
 fsm_destroy(struct fsm *s)
 {
-	fprintf(stderr, "fsm_destroy is NOT IMPLEMENTED\n");
-	exit(1);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e->dest != NULL);
@@ -356,7 +305,7 @@ fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
 	int num = thisnum;
 	automata_indent(level);
 	if (s->accepting) {
-		printf("[%d, Y](%d)\n", num, s->nedges);
+		printf("[%d, acc](%d)\n", num, s->nedges);
 	} else {
 		printf("[%d](%d)\n", num, s->nedges);
 	}
@@ -369,7 +318,7 @@ fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
 		automata_indent(level);
 		printf("-- %c -->\n", e->c);
 		struct sctracker *trnew = sctracker_copy(tr);
-		if (!sctracker_append(trnew, s->edges[i])) {
+		if (sctracker_append(trnew, s->edges[i])) {
 			num += fsm_print_act(e->dest, level + 1, num + 1, trnew);
 		}
 		sctracker_destroy(trnew);
@@ -385,6 +334,52 @@ fsm_print(struct fsm *s)
 	sctracker_destroy(tr);
 }
 
+struct fsmlist*
+fsmlist_epsclosure(struct fsmlist *l)
+{
+	if (l == NULL) {
+		return NULL;
+	}
+	struct fsmlist *m = fsm_epsclosure(l->s);
+	for (struct fsmlist *n = fsmlist_epsclosure(l->next); n != NULL;
+			n = n->next) {
+		fsmlist_append(m, n->name, n->s);
+	}
+	return m;
+}
+
+struct fsmlist*
+fsmlist_move(struct fsmlist *l, char c)
+{
+	if (l == NULL) {
+		return NULL;
+	}
+	assert(l->s != NULL);
+	struct fsmlist *m = fsm_move(l->s, c);
+	for (struct fsmlist *n = fsmlist_move(l->next, c); n != NULL;
+			n = n->next) {
+		fsmlist_append(m, n->name, n->s);
+	}
+	return m;
+}
+
+struct fsmlist*
+fsmlist_sim(struct fsmlist *l, char c)
+{
+	return fsmlist_epsclosure(fsmlist_move(l, c));
+}
+
+
+bool
+fsmlist_accepting(struct fsmlist *l)
+{
+	for (; l != NULL; l = l->next) {
+		if (l->s->accepting) {
+			return true;
+		}
+	}
+	return false;
+}
 
 struct fsmlist*
 fsmlist_create(char *name, struct fsm *s)
