@@ -82,8 +82,14 @@ void edge_destroy(struct edge *e)
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
-	fprintf(stderr, "automata_concat NOT IMPLEMENTED\n");
-	exit(1);
+	struct fsmlist *l = fsm_finals(s);
+	int owners = owner ? 0 : 1;
+	for (; l != NULL; l = l->next) {
+		assert(l->s->accepting);
+		l->s->accepting = false;
+		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
+	}
+	return s;
 }
 
 /* r = s | t */
@@ -226,13 +232,42 @@ automata_id(char *id, struct fsmlist *l)
 }
 
 struct fsmlist*
+fsm_finals_act(struct fsm *s, struct sctracker *tr)
+{
+	struct fsmlist *l = NULL;
+	if (s->accepting) {
+		l = fsmlist_append(l, NULL, s);
+	}
+	struct sctracker *trnew = sctracker_copy(tr);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge  *e = s->edges[i];
+		assert(e != NULL);
+		if (e->c == '\0' && !sctracker_append(trnew, e->dest)) {
+			continue;
+		}
+		for (struct fsmlist *m = fsm_finals_act(e->dest, trnew); m != NULL;
+				m = m->next) {
+			fsmlist_append(l, m->name, m->s);
+		}
+	}
+	sctracker_destroy(trnew);
+	return l;
+}
+
+struct fsmlist*
+fsm_finals(struct fsm *s)
+{
+	struct sctracker *tr = sctracker_create(s);
+	struct fsmlist *l = fsm_finals_act(s, tr);
+	sctracker_destroy(tr);
+	assert(l != NULL);
+	return l;
+}
+
+struct fsmlist*
 fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 {
-	// name must be heap-allocated because of
-	// fsmlist_destroy's expectations
-	char *name = (char *) malloc(sizeof(char));
-	*name = '\0';
-	struct fsmlist *l = fsmlist_append(l, name, s);
+	struct fsmlist *l = fsmlist_append(l, NULL, s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
@@ -265,11 +300,7 @@ fsm_move(struct fsm *s, char c)
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
 		if (e->c == c) {
-			// name must be heap-allocated because of
-			// fsmlist_destroy's expectations
-			char *name = (char *) malloc(sizeof(char));
-			*name = '\0';
-			l = fsmlist_append(l, name, e->dest);
+			l = fsmlist_append(l, NULL, e->dest);
 		}
 	}
 	return l;
@@ -437,7 +468,9 @@ fsmlist_destroy(struct fsmlist *l)
 	if (l->next != NULL) {
 		fsmlist_destroy(l->next);
 	}
-	free(l->name);
+	if (l->name != NULL) {
+		free(l->name);
+	}
 	fsm_destroy(l->s);
 	free(l);
 }

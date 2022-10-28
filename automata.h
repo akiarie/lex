@@ -20,6 +20,9 @@ struct fsm {
 struct fsm*
 fsm_create(bool accepting);
 
+struct fsmlist*
+fsm_finals(struct fsm *);
+
 void
 fsm_destroy(struct fsm *);
 
