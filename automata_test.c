@@ -23,7 +23,7 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 		}
 	}
 	bool response = fsmlist_accepting(l) == cs->shouldaccept;
-	fsmlist_destroy(l);
+	/*fsmlist_destroy(l);*/
 	return response;
 }
 

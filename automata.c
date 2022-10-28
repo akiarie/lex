@@ -228,8 +228,23 @@ automata_id(char *id, struct fsmlist *l)
 struct fsmlist*
 fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 {
-	fprintf(stderr, "fsmlist_epsclosure_act NOT IMPLEMENTED\n");
-	exit(1);
+	// name must be heap-allocated because of
+	// fsmlist_destroy's expectations
+	char *name = (char *) malloc(sizeof(char));
+	*name = '\0';
+	struct fsmlist *l = fsmlist_append(l, name, s);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		assert(e != NULL);
+		if (e->c != '\0' || !sctracker_append(tr, e->dest)) {
+			continue;
+		}
+		for (struct fsmlist *m = fsm_epsclosure_act(e->dest, tr);
+				m != NULL; m = m->next) {
+			fsmlist_append(l, m->name, m->s);
+		}
+	}
+	return l;
 }
 
 struct fsmlist*
@@ -245,7 +260,7 @@ struct fsmlist*
 fsm_move(struct fsm *s, char c)
 {
 	assert(c != '\0');
-	struct fsmlist *l;
+	struct fsmlist *l = NULL;
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
@@ -340,6 +355,7 @@ fsmlist_epsclosure(struct fsmlist *l)
 	if (l == NULL) {
 		return NULL;
 	}
+	assert(l->s != NULL);
 	struct fsmlist *m = fsm_epsclosure(l->s);
 	for (struct fsmlist *n = fsmlist_epsclosure(l->next); n != NULL;
 			n = n->next) {
@@ -374,6 +390,7 @@ bool
 fsmlist_accepting(struct fsmlist *l)
 {
 	for (; l != NULL; l = l->next) {
+		assert(l->s != NULL);
 		if (l->s->accepting) {
 			return true;
 		}
@@ -413,6 +430,9 @@ fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
 void
 fsmlist_destroy(struct fsmlist *l)
 {
+	if (l == NULL) {
+		return;
+	}
 	assert(l->s != NULL && l->name != NULL);
 	if (l->next != NULL) {
 		fsmlist_destroy(l->next);
