@@ -30,6 +30,8 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 {
 	for (int i = 0; i < len; i++) {
+		printf("Running '%s' with \n", cases[i].input);
+		fsm_print(s);
 		if (!runfsmcase(s, &cases[i])) {
 			fprintf(stderr, "'%s' case failed\n", cases[i].input);
 			exit(1);

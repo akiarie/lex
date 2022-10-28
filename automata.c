@@ -78,13 +78,12 @@ void edge_destroy(struct edge *e)
 	free(e);
 }
 
-/* r = s·t */
+/* r = s · t */
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
-	struct fsmlist *l = fsm_finals(s);
 	int owners = owner ? 0 : 1;
-	for (; l != NULL; l = l->next) {
+	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
 		assert(l->s->accepting);
 		l->s->accepting = false;
 		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
@@ -247,7 +246,7 @@ fsm_finals_act(struct fsm *s, struct sctracker *tr)
 		}
 		for (struct fsmlist *m = fsm_finals_act(e->dest, trnew); m != NULL;
 				m = m->next) {
-			fsmlist_append(l, m->name, m->s);
+			l = fsmlist_append(l, m->name, m->s);
 		}
 	}
 	sctracker_destroy(trnew);
@@ -267,7 +266,7 @@ fsm_finals(struct fsm *s)
 struct fsmlist*
 fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 {
-	struct fsmlist *l = fsmlist_append(l, NULL, s);
+	struct fsmlist *l = fsmlist_append(NULL, NULL, s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
