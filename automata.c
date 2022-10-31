@@ -94,9 +94,12 @@ automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
 	int owners = owner ? 0 : 1;
 	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
+		printf("before:\n");
 		fsmlist_print(l);
 		assert(l->s->accepting);
 		l->s->accepting = false;
+		printf("after:\n");
+		fsmlist_print(l);
 		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
 	}
 	return s;
