@@ -278,10 +278,13 @@ fsm_finals(struct fsm *s)
 	return l;
 }
 
+static struct fsmlist*
+fsmlist_create(char *name, struct fsm *s);
+
 struct fsmlist*
 fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 {
-	struct fsmlist *l = fsmlist_append(NULL, NULL, s);
+	struct fsmlist *l = fsmlist_create(NULL, s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
@@ -447,16 +450,6 @@ fsmlist_accepting(struct fsmlist *l)
 }
 
 struct fsmlist*
-fsmlist_create(char *name, struct fsm *s)
-{
-	struct fsmlist *l = (struct fsmlist *) malloc(sizeof(struct fsmlist));
-	l->name = name;
-	l->s = s;
-	l->next = NULL;
-	return l;
-}
-
-struct fsmlist*
 fsmlist_tail(struct fsmlist *l)
 {
 	for (; l->next != NULL; l = l->next) {}
@@ -492,10 +485,21 @@ fsmlist_print(struct fsmlist *l)
 	return fsmlist_print_act(l, 0);
 }
 
+static struct fsmlist*
+fsmlist_create(char *name, struct fsm *s)
+{
+	struct fsmlist *l = (struct fsmlist *) malloc(sizeof(struct fsmlist));
+	l->name = name;
+	l->s = s;
+	l->next = NULL;
+	return l;
+}
+
 struct fsmlist*
 fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
 {
-	struct fsmlist *next = fsmlist_create(name, s);
+	struct fsmlist *next = fsm_epsclosure(s);
+	next->name = name;
 	if (l == NULL) {
 		return next;
 	}

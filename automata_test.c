@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<strings.h>
+#include<assert.h>
 
 #include "automata.h"
 #include "util.h"
@@ -16,6 +17,7 @@ bool
 runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 {
 	struct fsmlist *l = fsmlist_append(NULL, "", nfa);
+	fsmlist_print(l);
 	for (char *c = cs->input; *c != '\0'; c++) {
 		printf("Simulating with '%c'\n", *c);
 		fsm_print(l->s);
@@ -44,6 +46,8 @@ simple_expressions()
 {
 	struct fsm *s = util_fsm_fromstring("a?", NULL);
 	struct fsmcase cases[] = {
+		{false,	"b"},
+		{true,	""},
 		{true,	"a"},
 		/*{true,	"aa"},*/
 	};
