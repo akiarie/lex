@@ -41,6 +41,9 @@ struct fsmlist {
 struct fsmlist*
 fsmlist_sim(struct fsmlist *states, char c);
 
+void
+fsmlist_print(struct fsmlist *);
+
 bool
 fsmlist_accepting(struct fsmlist *);
 

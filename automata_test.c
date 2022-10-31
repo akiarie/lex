@@ -17,6 +17,8 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 {
 	struct fsmlist *l = fsmlist_append(NULL, "", nfa);
 	for (char *c = cs->input; *c != '\0'; c++) {
+		printf("Simulating with '%c'\n", *c);
+		fsm_print(l->s);
 		l = fsmlist_sim(l, *c);
 		if (l == NULL) {
 			break;
@@ -30,8 +32,6 @@ runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 {
 	for (int i = 0; i < len; i++) {
-		printf("Running '%s' with \n", cases[i].input);
-		fsm_print(s);
 		if (!runfsmcase(s, &cases[i])) {
 			fprintf(stderr, "'%s' case failed\n", cases[i].input);
 			exit(1);
@@ -42,10 +42,10 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = util_fsm_fromstring("ab", NULL);
+	struct fsm *s = util_fsm_fromstring("a?", NULL);
 	struct fsmcase cases[] = {
-		{false,	"a"},
-		{true,	"ab"},
+		{true,	"a"},
+		/*{true,	"aa"},*/
 	};
 	run_cases(cases, LEN(cases), s);
 	fsm_destroy(s);

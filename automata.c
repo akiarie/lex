@@ -12,6 +12,16 @@ struct sctracker {
 	struct sctracker *next;
 };
 
+int
+sctracker_len(struct sctracker *tr)
+{
+	int n = 0;
+	for (struct sctracker *next = tr; tr != NULL; tr = tr->next) {
+		n++;
+	}
+	return n;
+}
+
 
 struct sctracker*
 sctracker_create(void *s)
@@ -104,6 +114,13 @@ automata_union(struct fsm *s, struct fsm *t)
 	return start;
 }
 
+struct fsm*
+automata_closure_ast(struct fsm *s)
+{
+	fprintf(stderr, "automata_closure_ast NOT IMPLEMENTED\n");
+	exit(1);
+}
+
 /* r = s* | s+ | s? */
 struct fsm*
 automata_closure(struct fsm *s, char c)
@@ -113,9 +130,7 @@ automata_closure(struct fsm *s, char c)
 	case '?':
 		return automata_union(fsm_create(true), s);
 	case '*':
-		closure = automata_closure(s, '?');
-		closure = automata_concat(closure, closure, false);
-		return closure;
+		return automata_closure_ast(s);
 	case '+':
 		return automata_concat(s, automata_closure(s, '*'), false);
 	default:
@@ -275,7 +290,7 @@ fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 		}
 		for (struct fsmlist *m = fsm_epsclosure_act(e->dest, tr);
 				m != NULL; m = m->next) {
-			fsmlist_append(l, m->name, m->s);
+			l = fsmlist_append(l, m->name, m->s);
 		}
 	}
 	return l;
@@ -361,10 +376,13 @@ fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		automata_indent(level);
-		printf("-- %c -->\n", e->c);
+		printf("-- %c -->", e->c);
 		struct sctracker *trnew = sctracker_copy(tr);
 		if (sctracker_append(trnew, s->edges[i])) {
+			printf("\n");
 			num += fsm_print_act(e->dest, level + 1, num + 1, trnew);
+		} else {
+			printf("* %d levels up\n", sctracker_len(tr) - 1);
 		}
 		sctracker_destroy(trnew);
 	}
@@ -389,7 +407,7 @@ fsmlist_epsclosure(struct fsmlist *l)
 	struct fsmlist *m = fsm_epsclosure(l->s);
 	for (struct fsmlist *n = fsmlist_epsclosure(l->next); n != NULL;
 			n = n->next) {
-		fsmlist_append(m, n->name, n->s);
+		m = fsmlist_append(m, n->name, n->s);
 	}
 	return m;
 }
@@ -404,7 +422,7 @@ fsmlist_move(struct fsmlist *l, char c)
 	struct fsmlist *m = fsm_move(l->s, c);
 	for (struct fsmlist *n = fsmlist_move(l->next, c); n != NULL;
 			n = n->next) {
-		fsmlist_append(m, n->name, n->s);
+		m = fsmlist_append(m, n->name, n->s);
 	}
 	return m;
 }
@@ -443,6 +461,35 @@ fsmlist_tail(struct fsmlist *l)
 {
 	for (; l->next != NULL; l = l->next) {}
 	return l;
+}
+
+void
+fsmlist_print_act(struct fsmlist *l, int level)
+{
+	automata_indent(level);
+	if (l == NULL) {
+		printf("NULL\n");
+		return;
+	}
+	printf("fsmlist[\n");
+	int thislevel = level + 1;
+	assert(l->s != NULL);
+	automata_indent(thislevel);
+	printf("'%s':\n", l->name == NULL ? "" : l->name);
+	struct sctracker *tr = sctracker_create(l->s);
+	fsm_print_act(l->s, thislevel, 0, tr);
+	sctracker_destroy(tr);
+	automata_indent(thislevel);
+	printf("next ->\n");
+	fsmlist_print_act(l->next, thislevel);
+	automata_indent(level);
+	printf("]\n");
+}
+
+void
+fsmlist_print(struct fsmlist *l)
+{
+	return fsmlist_print_act(l, 0);
 }
 
 struct fsmlist*
