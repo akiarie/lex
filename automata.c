@@ -94,6 +94,7 @@ automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
 	int owners = owner ? 0 : 1;
 	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
+		fsmlist_print(l);
 		assert(l->s->accepting);
 		l->s->accepting = false;
 		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
@@ -340,6 +341,18 @@ fsm_create(bool accepting)
 	s->nedges = 0;
 	s->edges = NULL;
 	return s;
+}
+
+struct fsm*
+fsm_copy(struct fsm *s)
+{
+	assert(s != NULL);
+	struct fsm *new = fsm_create(s->accepting);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		fsm_addedge(new, edge_create(fsm_copy(e->dest), e->c, e->owner));
+	}
+	return new;
 }
 
 void

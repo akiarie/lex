@@ -18,6 +18,9 @@ struct fsm {
 };
 
 struct fsm*
+fsm_copy(struct fsm *);
+
+struct fsm*
 fsm_create(bool accepting);
 
 struct fsmlist*
