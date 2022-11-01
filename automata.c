@@ -117,8 +117,18 @@ automata_union(struct fsm *s, struct fsm *t)
 struct fsm*
 automata_closure_ast(struct fsm *s)
 {
-	fprintf(stderr, "automata_closure_ast NOT IMPLEMENTED\n");
-	exit(1);
+	struct fsm *start = fsm_create(false);
+	struct fsm *final = fsm_create(true);
+	fsm_addedge(start, edge_create(s, '\0', true));
+	fsm_addedge(start, edge_create(final, '\0', true));
+	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
+		assert(l->s->accepting);
+		l->s->accepting = false;
+		fsm_addedge(l->s, edge_create(s, '\0', false));
+		fsm_addedge(l->s, edge_create(final, '\0', false));
+	}
+	fsm_print(s);
+	return start;
 }
 
 /* r = s* | s+ | s? */
@@ -412,33 +422,57 @@ fsmcounter_count(struct fsmcounter *c, void *p)
 }
 
 
+static void
+fsm_print_edge_indent(int level)
+{
+	automata_indent(level);
+	printf("|\n");
+	automata_indent(level);
+}
+
+static void
+fsm_print_node(struct fsm *s, int level, int count)
+{
+	automata_indent(level);
+	if (s->accepting) {
+		printf("[%d, acc](%d)\n", count, s->nedges);
+	} else {
+		printf("[%d](%d)\n", count, s->nedges);
+	}
+}
+
+
+int
+fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
+		struct sctracker *tr);
+
+static int
+fsm_print_edge(struct edge *e, int level, struct fsmcounter *cnt, struct
+		sctracker *tr)
+{
+	int num = 0;
+	if (sctracker_append(tr, e->dest)) {
+		printf("\n");
+		num = fsm_print_act(e->dest, level, cnt, tr);
+	} else {
+		printf("*\n");
+	}
+	return num;
+}
+
 int
 fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
 		struct sctracker *tr)
 {
 	assert(s != NULL && cnt != NULL && tr != NULL);
 	int num = fsmcounter_count(cnt, s);
-	automata_indent(level);
-	if (s->accepting) {
-		printf("[%d, acc](%d)\n", num, s->nedges);
-	} else {
-		printf("[%d](%d)\n", num, s->nedges);
-	}
-	if (s->nedges > 0) {
-		automata_indent(level);
-		printf("|\n");
-	}
+	fsm_print_node(s, level, num);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
-		automata_indent(level);
+		fsm_print_edge_indent(level);
 		printf("-- %c -->", e->c);
 		struct sctracker *trnew = sctracker_copy(tr);
-		if (sctracker_append(trnew, e)) {
-			printf("\n");
-			num += fsm_print_act(e->dest, level + 1, cnt, trnew);
-		} else {
-			printf("* to %d\n", fsmcounter_count(cnt, e));
-		}
+		num += fsm_print_edge(e, level + 1, cnt, trnew);
 		sctracker_destroy(trnew);
 	}
 	return s->nedges;

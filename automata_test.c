@@ -43,13 +43,14 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = util_fsm_fromstring("a?b", NULL);
+	struct fsm *s = util_fsm_fromstring("a*", NULL);
 	struct fsmcase cases[] = {
-		{false,	""},
-		{false,	"a"},
-		{true,	"b"},
-		{true,	"ab"},
-		{false,	"abc"},
+		{true,	""},
+		{true,	"a"},
+		{true,	"aa"},
+		/*{true,	"b"},*/
+		/*{true,	"ab"},*/
+		/*{false,	"abc"},*/
 	};
 	run_cases(cases, LEN(cases), s);
 	fsm_destroy(s);
