@@ -352,16 +352,31 @@ fsm_create(bool accepting)
 	return s;
 }
 
-struct fsm*
-fsm_copy(struct fsm *s)
+static struct fsm*
+fsm_copy_act(struct fsm *s, struct sctracker *tr)
 {
 	assert(s != NULL);
 	struct fsm *new = fsm_create(s->accepting);
+	struct sctracker *trnew = sctracker_copy(tr);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
-		fsm_addedge(new, edge_create(fsm_copy(e->dest), e->c, e->owner));
+		if (e->c == '\0' && !sctracker_append(trnew, e->dest)) {
+			continue;
+		}
+		fsm_addedge(new, edge_create(fsm_copy_act(e->dest, trnew),
+			e->c, e->owner));
 	}
+	sctracker_destroy(trnew);
 	return new;
+}
+
+struct fsm*
+fsm_copy(struct fsm *s)
+{
+	struct sctracker *tr = sctracker_create(s);
+	struct fsm *new = fsm_copy_act(s, tr);
+	sctracker_destroy(tr);
+	return s;
 }
 
 void
