@@ -51,7 +51,9 @@ fsmlist_print(struct fsmlist *);
 bool
 fsmlist_accepting(struct fsmlist *);
 
-/* creates a list if NULL pointer is supplied */
+struct fsmlist*
+fsmlist_fromfsm(struct fsm *);
+
 struct fsmlist*
 fsmlist_append(struct fsmlist *, char *name, struct fsm *s);
 

@@ -105,6 +105,7 @@ automata_concat(struct fsm *s, struct fsm *t, bool owner)
 struct fsm*
 automata_union(struct fsm *s, struct fsm *t)
 {
+	assert(s != t);
 	struct fsm *start = fsm_create(false);
 	fsm_addedge(start, edge_create(s, '\0', true));
 	fsm_addedge(start, edge_create(t, '\0', true));
@@ -127,7 +128,6 @@ automata_closure_ast(struct fsm *s)
 		fsm_addedge(l->s, edge_create(s, '\0', false));
 		fsm_addedge(l->s, edge_create(final, '\0', false));
 	}
-	fsm_print(s);
 	return start;
 }
 
@@ -288,6 +288,12 @@ fsm_finals(struct fsm *s)
 	return l;
 }
 
+struct fsmlist*
+fsmlist_fromfsm(struct fsm *s)
+{
+	return fsmlist_append(NULL, NULL, s);
+}
+
 static struct fsmlist*
 fsmlist_create(char *name, struct fsm *s);
 
@@ -382,12 +388,20 @@ fsm_copy(struct fsm *s)
 void
 fsm_destroy(struct fsm *s)
 {
+	assert(s != NULL);
+	printf("starting 0x%lx\n", (unsigned long)s);
+	fsm_print(s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e->dest != NULL);
+		printf("edge destroy\n");
 		edge_destroy(e);
+		printf("edge gone\n");
 	}
+	printf("ending\n");
+	fsm_print(s);
 	free(s);
+	printf("done\n");
 }
 
 void
@@ -631,7 +645,7 @@ fsmlist_destroy(struct fsmlist *l)
 	if (l == NULL) {
 		return;
 	}
-	assert(l->s != NULL && l->name != NULL);
+	assert(l->s != NULL);
 	if (l->next != NULL) {
 		fsmlist_destroy(l->next);
 	}
@@ -639,6 +653,5 @@ fsmlist_destroy(struct fsmlist *l)
 		free(l->name);
 	}
 	sctracker_destroy(l->tr);
-	fsm_destroy(l->s);
 	free(l);
 }

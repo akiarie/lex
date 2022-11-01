@@ -16,17 +16,17 @@ struct fsmcase {
 bool
 runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 {
-	struct fsmlist *l = fsmlist_append(NULL, "", fsm_copy(nfa));
+	struct fsm *s = fsm_copy(nfa);
+	struct fsmlist *l = fsmlist_fromfsm(s);
 	for (char *c = cs->input; *c != '\0'; c++) {
-		printf("Simulating with '%c'\n", *c);
-		fsm_print(l->s);
 		l = fsmlist_sim(l, *c);
 		if (l == NULL) {
 			break;
 		}
 	}
 	bool response = fsmlist_accepting(l) == cs->shouldaccept;
-	/*fsmlist_destroy(l);*/
+	fsmlist_destroy(l);
+	fsm_destroy(s);
 	return response;
 }
 
@@ -55,7 +55,24 @@ simple_expressions()
 		{false,	"aabc"},
 	};
 	run_cases(cases, LEN(cases), s);
-	fsm_destroy(s);
+}
+
+void
+second_tier()
+{
+	struct fsm *s = util_fsm_fromstring("a[bcg-z0-3]*d", NULL);
+	struct fsmcase cases[] = {
+		{false, "hello, world!"},
+		{true,  "ad"},
+		{true,  "abd"},
+		{true,  "acd"},
+		{true,  "abcccccccbbcd"},
+		{false, "abcefd"},
+		{true,  "abcghijpqrwzzcd"},
+		{false, "abcghi9jpqrwzzcd"},
+		{true,	"abcghi123jpqrwzzcd"},
+	};
+	run_cases(cases, LEN(cases), s);
 }
 
 void
@@ -102,6 +119,7 @@ main()
 {
 	test tests[] = {
 		simple_expressions,
+		second_tier,
 		/*piglatin,*/
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
