@@ -94,12 +94,8 @@ automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
 	int owners = owner ? 0 : 1;
 	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
-		printf("before:\n");
-		fsmlist_print(l);
 		assert(l->s->accepting);
 		l->s->accepting = false;
-		printf("after:\n");
-		fsmlist_print(l);
 		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
 	}
 	return s;
@@ -377,11 +373,51 @@ automata_indent(int len)
 	}
 }
 
-int
-fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
+struct fsmcounter {
+	void *p;
+	struct fsmcounter *next;
+};
+
+struct fsmcounter*
+fsmcounter_create(void *p)
 {
-	assert(s != NULL);
-	int num = thisnum;
+	struct fsmcounter *c = (struct fsmcounter *)
+		malloc(sizeof(struct fsmcounter));
+	c->p = p;
+	c->next = NULL;
+	return c;
+}
+
+void
+fsmcounter_destroy(struct fsmcounter *c)
+{
+	if (c->next != NULL) {
+		fsmcounter_destroy(c->next);
+	}
+	free(c);
+}
+
+int
+fsmcounter_count(struct fsmcounter *c, void *p)
+{
+	assert(c != NULL);
+	if (c->p == p) {
+		// repeat
+		return 0;
+	}
+	if (c->next == NULL) {
+		c->next = fsmcounter_create(p);
+	}
+	return 1 + fsmcounter_count(c->next, p);
+}
+
+
+int
+fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
+		struct sctracker *tr)
+{
+	assert(s != NULL && cnt != NULL && tr != NULL);
+	int num = fsmcounter_count(cnt, s);
 	automata_indent(level);
 	if (s->accepting) {
 		printf("[%d, acc](%d)\n", num, s->nedges);
@@ -397,11 +433,11 @@ fsm_print_act(struct fsm *s, int level, int thisnum, struct sctracker *tr)
 		automata_indent(level);
 		printf("-- %c -->", e->c);
 		struct sctracker *trnew = sctracker_copy(tr);
-		if (sctracker_append(trnew, s->edges[i])) {
+		if (sctracker_append(trnew, e)) {
 			printf("\n");
-			num += fsm_print_act(e->dest, level + 1, num + 1, trnew);
+			num += fsm_print_act(e->dest, level + 1, cnt, trnew);
 		} else {
-			printf("* %d levels up\n", sctracker_len(tr) - 1);
+			printf("* to %d\n", fsmcounter_count(cnt, e));
 		}
 		sctracker_destroy(trnew);
 	}
@@ -412,7 +448,9 @@ void
 fsm_print(struct fsm *s)
 {
 	struct sctracker *tr = sctracker_create(s);
-	fsm_print_act(s, 0, 0, tr);
+	struct fsmcounter *cnt = fsmcounter_create(s);
+	fsm_print_act(s, 0, cnt, tr);
+	fsmcounter_destroy(cnt);
 	sctracker_destroy(tr);
 }
 
@@ -473,24 +511,27 @@ fsmlist_tail(struct fsmlist *l)
 }
 
 void
-fsmlist_print_act(struct fsmlist *l, int level)
+fsmlist_print_act(struct fsmlist *l, int level, struct fsmcounter *cnt)
 {
 	automata_indent(level);
 	if (l == NULL) {
 		printf("NULL\n");
 		return;
 	}
-	printf("fsmlist[\n");
+	assert(l != NULL && cnt != NULL);
 	int thislevel = level + 1;
-	assert(l->s != NULL);
+
+	printf("fsmlist[\n");
+
 	automata_indent(thislevel);
 	printf("'%s':\n", l->name == NULL ? "" : l->name);
 	struct sctracker *tr = sctracker_create(l->s);
-	fsm_print_act(l->s, thislevel, 0, tr);
+	fsm_print_act(l->s, thislevel, cnt, tr);
 	sctracker_destroy(tr);
 	automata_indent(thislevel);
 	printf("next ->\n");
-	fsmlist_print_act(l->next, thislevel);
+	fsmlist_print_act(l->next, thislevel, cnt);
+
 	automata_indent(level);
 	printf("]\n");
 }
@@ -498,7 +539,14 @@ fsmlist_print_act(struct fsmlist *l, int level)
 void
 fsmlist_print(struct fsmlist *l)
 {
-	return fsmlist_print_act(l, 0);
+	if (l == NULL) {
+		fsmlist_print_act(l, 0, NULL);
+		return;
+	}
+	struct fsmcounter *cnt = fsmcounter_create(l->s);
+	fsmlist_print_act(l, 0, cnt);
+	fsmcounter_destroy(cnt);
+	return;
 }
 
 static struct fsmlist*
@@ -508,6 +556,7 @@ fsmlist_create(char *name, struct fsm *s)
 	l->name = name;
 	l->s = s;
 	l->next = NULL;
+	l->tr = sctracker_create(l->s);
 	return l;
 }
 
@@ -518,6 +567,9 @@ fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
 	next->name = name;
 	if (l == NULL) {
 		return next;
+	}
+	if (!sctracker_append(l->tr, s)) {
+		return l;
 	}
 	struct fsmlist *tail = fsmlist_tail(l);
 	tail->next = next;
@@ -537,6 +589,7 @@ fsmlist_destroy(struct fsmlist *l)
 	if (l->name != NULL) {
 		free(l->name);
 	}
+	sctracker_destroy(l->tr);
 	fsm_destroy(l->s);
 	free(l);
 }

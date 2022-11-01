@@ -39,6 +39,7 @@ struct fsmlist {
 	char *name;
 	struct fsm *s;
 	struct fsmlist *next;
+	struct sctracker *tr;
 };
 
 struct fsmlist*

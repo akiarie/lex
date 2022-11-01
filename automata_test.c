@@ -17,7 +17,6 @@ bool
 runfsmcase(struct fsm *nfa, struct fsmcase *cs)
 {
 	struct fsmlist *l = fsmlist_append(NULL, "", fsm_copy(nfa));
-	fsmlist_print(l);
 	for (char *c = cs->input; *c != '\0'; c++) {
 		printf("Simulating with '%c'\n", *c);
 		fsm_print(l->s);
@@ -50,7 +49,7 @@ simple_expressions()
 		{false,	"a"},
 		{true,	"b"},
 		{true,	"ab"},
-		/*{true,	"aa"},*/
+		{false,	"abc"},
 	};
 	run_cases(cases, LEN(cases), s);
 	fsm_destroy(s);
