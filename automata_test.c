@@ -55,6 +55,7 @@ simple_expressions()
 		{false,	"aabc"},
 	};
 	run_cases(cases, LEN(cases), s);
+	fsm_destroy(s);
 }
 
 void
@@ -73,6 +74,7 @@ second_tier()
 		{true,	"abcghi123jpqrwzzcd"},
 	};
 	run_cases(cases, LEN(cases), s);
+	fsm_destroy(s);
 }
 
 void
@@ -90,26 +92,29 @@ piglatin()
 		struct fsm *s = util_fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, patterns[i].name, s);
 	}
+	assert(list != NULL);
 	struct fsmlist *m = list;
-	for (; strcmp("vword", m->name) != 0; m = m->next) {}
-	struct fsm *vword = m->s;
-	struct fsmcase vcases[] = {
-		{false, "baaaooaoa"},
-		{true,  "abwerqasd"},
-		{true,  "ebwerqasd"},
-		{true,  "ibwerqasd"},
-	};
-	run_cases(vcases, LEN(vcases), vword);
-	for (m = list; strcmp("cword", m->name) != 0; m = m->next) {}
-	struct fsm *cword = m->s;
-	struct fsmcase ccases[] = {
-		{false, "abcefd"},
-		{false, "ebcghi9jpqrwzzcd"},
-		{true,  "basdfaue"},
-		{true,  "gasdfaue"},
-		{true,  "hasdfaue"},
-	};
-	run_cases(ccases, LEN(ccases), cword);
+	for (; strcmp("vword", m->name) != 0; m = m->next) {
+		printf("%s\n", m->name);
+	}
+	/*struct fsm *vword = m->s;*/
+	/*struct fsmcase vcases[] = {*/
+		/*{false, "baaaooaoa"},*/
+		/*{true,  "abwerqasd"},*/
+		/*{true,  "ebwerqasd"},*/
+		/*{true,  "ibwerqasd"},*/
+	/*};*/
+	/*run_cases(vcases, LEN(vcases), vword);*/
+	/*for (m = list; strcmp("cword", m->name) != 0; m = m->next) {}*/
+	/*struct fsm *cword = m->s;*/
+	/*struct fsmcase ccases[] = {*/
+		/*{false, "abcefd"},*/
+		/*{false, "ebcghi9jpqrwzzcd"},*/
+		/*{true,  "basdfaue"},*/
+		/*{true,  "gasdfaue"},*/
+		/*{true,  "hasdfaue"},*/
+	/*};*/
+	/*run_cases(ccases, LEN(ccases), cword);*/
 }
 
 typedef void (*test)(void);
@@ -120,7 +125,7 @@ main()
 	test tests[] = {
 		simple_expressions,
 		second_tier,
-		/*piglatin,*/
+		piglatin,
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();

@@ -359,6 +359,18 @@ fsm_create(bool accepting)
 }
 
 static struct fsm*
+fsm_copy_act(struct fsm *s, struct sctracker *tr);
+
+struct fsm*
+fsm_copy_dest(struct edge *e, struct sctracker *tr)
+{
+	if (e->c == '\0' && !sctracker_append(tr, e->dest)) {
+		return e->dest;
+	}
+	return fsm_copy_act(e->dest, tr);
+}
+
+static struct fsm*
 fsm_copy_act(struct fsm *s, struct sctracker *tr)
 {
 	assert(s != NULL);
@@ -366,11 +378,8 @@ fsm_copy_act(struct fsm *s, struct sctracker *tr)
 	struct sctracker *trnew = sctracker_copy(tr);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
-		if (e->c == '\0' && !sctracker_append(trnew, e->dest)) {
-			continue;
-		}
-		fsm_addedge(new, edge_create(fsm_copy_act(e->dest, trnew),
-			e->c, e->owner));
+		fsm_addedge(new, edge_create(fsm_copy_dest(e, trnew), e->c,
+			e->owner));
 	}
 	sctracker_destroy(trnew);
 	return new;
@@ -382,26 +391,19 @@ fsm_copy(struct fsm *s)
 	struct sctracker *tr = sctracker_create(s);
 	struct fsm *new = fsm_copy_act(s, tr);
 	sctracker_destroy(tr);
-	return s;
+	return new;
 }
 
 void
 fsm_destroy(struct fsm *s)
 {
 	assert(s != NULL);
-	printf("starting 0x%lx\n", (unsigned long)s);
-	fsm_print(s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e->dest != NULL);
-		printf("edge destroy\n");
 		edge_destroy(e);
-		printf("edge gone\n");
 	}
-	printf("ending\n");
-	fsm_print(s);
 	free(s);
-	printf("done\n");
 }
 
 void
