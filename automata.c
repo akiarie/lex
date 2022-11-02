@@ -6,62 +6,62 @@
 #include "automata.h"
 
 
-/* sctracker: short circuit tracker */
-struct sctracker {
+/* circuitbreaker: tracker to prevent ε-loops */
+struct circuitbreaker {
 	void *s;
-	struct sctracker *next;
+	struct circuitbreaker *next;
 };
 
 int
-sctracker_len(struct sctracker *tr)
+circuitbreaker_len(struct circuitbreaker *tr)
 {
 	int n = 0;
-	for (struct sctracker *next = tr; tr != NULL; tr = tr->next) {
+	for (struct circuitbreaker *next = tr; tr != NULL; tr = tr->next) {
 		n++;
 	}
 	return n;
 }
 
 
-struct sctracker*
-sctracker_create(void *s)
+struct circuitbreaker*
+circuitbreaker_create(void *s)
 {
-	struct sctracker *tr = (struct sctracker *)
-		malloc(sizeof(struct sctracker));
+	struct circuitbreaker *tr = (struct circuitbreaker *)
+		malloc(sizeof(struct circuitbreaker));
 	tr->s = s;
 	tr->next = NULL;
 	return tr;
 }
 
 
-struct sctracker*
-sctracker_copy(struct sctracker *tr)
+struct circuitbreaker*
+circuitbreaker_copy(struct circuitbreaker *tr)
 {
-	struct sctracker *new = sctracker_create(tr->s);
+	struct circuitbreaker *new = circuitbreaker_create(tr->s);
 	if (tr->next != NULL) {
-		new->next = sctracker_copy(tr->next);
+		new->next = circuitbreaker_copy(tr->next);
 	}
 	return new;
 }
 
 
 void
-sctracker_destroy(struct sctracker *tr)
+circuitbreaker_destroy(struct circuitbreaker *tr)
 {
 	assert(tr != NULL);
 	if (tr->next != NULL) {
-		sctracker_destroy(tr->next);
+		circuitbreaker_destroy(tr->next);
 	}
 	free(tr);
 }
 
 
 bool
-sctracker_append(struct sctracker *tr, void *s)
+circuitbreaker_append(struct circuitbreaker *tr, void *s)
 {
 	for (; tr->s != s; tr = tr->next) {
 		if (tr->next == NULL) {
-			tr->next = sctracker_create(s);
+			tr->next = circuitbreaker_create(s);
 			return true;
 		}
 	}
@@ -248,7 +248,7 @@ automata_id(char *id, struct fsmlist *l)
 {
 	for (; l != NULL; l = l->next) {
 		if (strcmp(id, l->name) == 0) {
-			return l->s;
+			return fsm_copy(l->s);
 		}
 	}
 	fprintf(stderr, "unknown pattern '%s' has not been declared\n", id);
@@ -256,17 +256,17 @@ automata_id(char *id, struct fsmlist *l)
 }
 
 struct fsmlist*
-fsm_finals_act(struct fsm *s, struct sctracker *tr)
+fsm_finals_act(struct fsm *s, struct circuitbreaker *tr)
 {
 	struct fsmlist *l = NULL;
 	if (s->accepting) {
 		l = fsmlist_append(l, NULL, s);
 	}
-	struct sctracker *trnew = sctracker_copy(tr);
+	struct circuitbreaker *trnew = circuitbreaker_copy(tr);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge  *e = s->edges[i];
 		assert(e != NULL);
-		if (e->c == '\0' && !sctracker_append(trnew, e->dest)) {
+		if (e->c == '\0' && !circuitbreaker_append(trnew, e->dest)) {
 			continue;
 		}
 		for (struct fsmlist *m = fsm_finals_act(e->dest, trnew); m != NULL;
@@ -274,16 +274,16 @@ fsm_finals_act(struct fsm *s, struct sctracker *tr)
 			l = fsmlist_append(l, m->name, m->s);
 		}
 	}
-	sctracker_destroy(trnew);
+	circuitbreaker_destroy(trnew);
 	return l;
 }
 
 struct fsmlist*
 fsm_finals(struct fsm *s)
 {
-	struct sctracker *tr = sctracker_create(s);
+	struct circuitbreaker *tr = circuitbreaker_create(s);
 	struct fsmlist *l = fsm_finals_act(s, tr);
-	sctracker_destroy(tr);
+	circuitbreaker_destroy(tr);
 	assert(l != NULL);
 	return l;
 }
@@ -298,13 +298,13 @@ static struct fsmlist*
 fsmlist_create(char *name, struct fsm *s);
 
 struct fsmlist*
-fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
+fsm_epsclosure_act(struct fsm *s, struct circuitbreaker *tr)
 {
 	struct fsmlist *l = fsmlist_create(NULL, s);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		assert(e != NULL);
-		if (e->c != '\0' || !sctracker_append(tr, e->dest)) {
+		if (e->c != '\0' || !circuitbreaker_append(tr, e->dest)) {
 			continue;
 		}
 		for (struct fsmlist *m = fsm_epsclosure_act(e->dest, tr);
@@ -318,9 +318,9 @@ fsm_epsclosure_act(struct fsm *s, struct sctracker *tr)
 struct fsmlist*
 fsm_epsclosure(struct fsm *s)
 {
-	struct sctracker *tr = sctracker_create(s);
+	struct circuitbreaker *tr = circuitbreaker_create(s);
 	struct fsmlist *l = fsm_epsclosure_act(s, tr);
-	sctracker_destroy(tr);
+	circuitbreaker_destroy(tr);
 	return l;
 }
 
@@ -359,38 +359,38 @@ fsm_create(bool accepting)
 }
 
 static struct fsm*
-fsm_copy_act(struct fsm *s, struct sctracker *tr);
+fsm_copy_act(struct fsm *s, struct circuitbreaker *tr);
 
 struct fsm*
-fsm_copy_dest(struct edge *e, struct sctracker *tr)
+fsm_copy_dest(struct edge *e, struct circuitbreaker *tr)
 {
-	if (e->c == '\0' && !sctracker_append(tr, e->dest)) {
+	if (e->c == '\0' && !circuitbreaker_append(tr, e->dest)) {
 		return e->dest;
 	}
 	return fsm_copy_act(e->dest, tr);
 }
 
 static struct fsm*
-fsm_copy_act(struct fsm *s, struct sctracker *tr)
+fsm_copy_act(struct fsm *s, struct circuitbreaker *tr)
 {
 	assert(s != NULL);
 	struct fsm *new = fsm_create(s->accepting);
-	struct sctracker *trnew = sctracker_copy(tr);
+	struct circuitbreaker *trnew = circuitbreaker_copy(tr);
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		fsm_addedge(new, edge_create(fsm_copy_dest(e, trnew), e->c,
 			e->owner));
 	}
-	sctracker_destroy(trnew);
+	circuitbreaker_destroy(trnew);
 	return new;
 }
 
 struct fsm*
 fsm_copy(struct fsm *s)
 {
-	struct sctracker *tr = sctracker_create(s);
+	struct circuitbreaker *tr = circuitbreaker_create(s);
 	struct fsm *new = fsm_copy_act(s, tr);
-	sctracker_destroy(tr);
+	circuitbreaker_destroy(tr);
 	return new;
 }
 
@@ -475,14 +475,14 @@ fsm_print_node(struct fsm *s, int level, int count)
 
 int
 fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
-		struct sctracker *tr);
+		struct circuitbreaker *tr);
 
 static int
 fsm_print_edge(struct edge *e, int level, struct fsmcounter *cnt, struct
-		sctracker *tr)
+		circuitbreaker *tr)
 {
 	int num = 0;
-	if (sctracker_append(tr, e->dest)) {
+	if (circuitbreaker_append(tr, e->dest)) {
 		printf("\n");
 		num = fsm_print_act(e->dest, level, cnt, tr);
 	} else {
@@ -493,7 +493,7 @@ fsm_print_edge(struct edge *e, int level, struct fsmcounter *cnt, struct
 
 int
 fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
-		struct sctracker *tr)
+		struct circuitbreaker *tr)
 {
 	assert(s != NULL && cnt != NULL && tr != NULL);
 	int num = fsmcounter_count(cnt, s);
@@ -502,9 +502,9 @@ fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
 		struct edge *e = s->edges[i];
 		fsm_print_edge_indent(level);
 		printf("-- %c -->", e->c);
-		struct sctracker *trnew = sctracker_copy(tr);
+		struct circuitbreaker *trnew = circuitbreaker_copy(tr);
 		num += fsm_print_edge(e, level + 1, cnt, trnew);
-		sctracker_destroy(trnew);
+		circuitbreaker_destroy(trnew);
 	}
 	return s->nedges;
 }
@@ -512,11 +512,11 @@ fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
 void
 fsm_print(struct fsm *s)
 {
-	struct sctracker *tr = sctracker_create(s);
+	struct circuitbreaker *tr = circuitbreaker_create(s);
 	struct fsmcounter *cnt = fsmcounter_create(s);
 	fsm_print_act(s, 0, cnt, tr);
 	fsmcounter_destroy(cnt);
-	sctracker_destroy(tr);
+	circuitbreaker_destroy(tr);
 }
 
 struct fsmlist*
@@ -590,9 +590,9 @@ fsmlist_print_act(struct fsmlist *l, int level, struct fsmcounter *cnt)
 
 	automata_indent(thislevel);
 	printf("'%s':\n", l->name == NULL ? "" : l->name);
-	struct sctracker *tr = sctracker_create(l->s);
+	struct circuitbreaker *tr = circuitbreaker_create(l->s);
 	fsm_print_act(l->s, thislevel, cnt, tr);
-	sctracker_destroy(tr);
+	circuitbreaker_destroy(tr);
 	automata_indent(thislevel);
 	printf("next ->\n");
 	fsmlist_print_act(l->next, thislevel, cnt);
@@ -621,7 +621,7 @@ fsmlist_create(char *name, struct fsm *s)
 	l->name = name;
 	l->s = s;
 	l->next = NULL;
-	l->tr = sctracker_create(l->s);
+	l->tr = circuitbreaker_create(l->s);
 	return l;
 }
 
@@ -633,7 +633,7 @@ fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
 	if (l == NULL) {
 		return next;
 	}
-	if (!sctracker_append(l->tr, s)) {
+	if (!circuitbreaker_append(l->tr, s)) {
 		return l;
 	}
 	struct fsmlist *tail = fsmlist_tail(l);
@@ -647,13 +647,12 @@ fsmlist_destroy(struct fsmlist *l)
 	if (l == NULL) {
 		return;
 	}
-	assert(l->s != NULL);
 	if (l->next != NULL) {
 		fsmlist_destroy(l->next);
 	}
 	if (l->name != NULL) {
 		free(l->name);
 	}
-	sctracker_destroy(l->tr);
+	circuitbreaker_destroy(l->tr);
 	free(l);
 }

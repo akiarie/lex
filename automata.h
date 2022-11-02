@@ -39,7 +39,7 @@ struct fsmlist {
 	char *name;
 	struct fsm *s;
 	struct fsmlist *next;
-	struct sctracker *tr;
+	struct circuitbreaker *tr;
 };
 
 struct fsmlist*
@@ -62,6 +62,9 @@ fsmlist_destroy(struct fsmlist *);
 
 struct fsmlist*
 fsmlist_copy(struct fsmlist *);
+
+struct fsmlist*
+fsmlist_tail(struct fsmlist *);
 
 struct fsm*
 automata_concat(struct fsm *, struct fsm *, bool);
