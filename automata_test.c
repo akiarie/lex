@@ -104,8 +104,7 @@ piglatin()
 	}
 	assert(list != NULL);
 	struct fsmlist *m = list;
-	for (; strcmp("vword", m->name) != 0; m = m->next) {
-	}
+	for (; strcmp("vword", m->name) != 0; m = m->next) {}
 	struct fsm *vword = m->s;
 	struct fsmcase vcases[] = {
 		{false, "baaaooaoa"},
