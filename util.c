@@ -7,7 +7,7 @@
 #include "thompson.h"
 #include "util_gen.c"
 
-struct fsm*
+static struct fsm*
 util_fsm_fromtree(struct tnode* tree, struct fsmlist *l)
 {
 	char *typename;
@@ -70,7 +70,7 @@ util_fsm_fromstring(char *input, struct fsmlist *l)
 	return s;
 }
 
-int
+static int
 util_numlen(int num)
 {
 	assert(num >= 0);
@@ -82,9 +82,8 @@ util_numlen(int num)
 }
 
 #define LEX_NAME_FSM "ln_fsm"
-#define LEX_NAME_EDGE "ln_edge"
 
-char*
+static char*
 util_name(char *type, int num)
 {
 	int len = strlen(type) + util_numlen(num) + 1;
@@ -115,7 +114,7 @@ struct genresult {
 	char *lval;
 };
 
-struct genresult*
+static struct genresult*
 genresult_create(int num, char *lval)
 {
 	struct genresult *r = (struct genresult *) malloc(sizeof(struct genresult));
@@ -124,14 +123,14 @@ genresult_create(int num, char *lval)
 	return r;
 }
 
-void
+static void
 genresult_destroy(struct genresult *r)
 {
 	free(r->lval);
 	free(r);
 }
 
-struct genresult*
+static struct genresult*
 util_gen_automaton(struct fsm *s, int num);
 
 static char*
@@ -148,7 +147,7 @@ gen_edge_create(char *to, char improperc, bool owner)
 	return val;
 }
 
-struct genresult*
+static struct genresult*
 util_gen_edge(struct edge *e, int num)
 {
 	assert(e->dest != NULL);
@@ -159,7 +158,7 @@ util_gen_edge(struct edge *e, int num)
 	return genresult_create(r->num, command);
 }
 
-struct genresult*
+static struct genresult*
 util_gen_automaton(struct fsm *s, int num)
 {
 	char *name = util_name(LEX_NAME_FSM, num++);
@@ -174,7 +173,7 @@ util_gen_automaton(struct fsm *s, int num)
 	return genresult_create(num, name);
 }
 
-void
+static void
 util_gen_driver(char *name)
 {
 	printf("/* driver code based on %s */\n", name);

@@ -12,6 +12,7 @@ run()
 {
 	struct { char *name; char *regex; } patterns[] = {
 		{"vowel", "[aeiou]"},
+		{"vword", "{vowel}[a-z]*"},
 	};
 	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
