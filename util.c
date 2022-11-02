@@ -93,8 +93,8 @@ util_name(char *type, int num)
 	return name;
 }
 
-char*
-util_proper_char(char c)
+static char*
+proper_char(char c)
 {
 	int len;
 	char *s;
@@ -134,19 +134,29 @@ genresult_destroy(struct genresult *r)
 struct genresult*
 util_gen_automaton(struct fsm *s, int num);
 
+static char*
+gen_edge_create(char *to, char improperc, bool owner)
+{
+	char *ownerstr = owner ? "true" : "false";
+	char *c = proper_char(improperc);
+	int len = strlen("edge_create(, '', )") + strlen(to) + strlen(c) +
+		strlen(ownerstr) + 1;
+	char *val = (char *) malloc(sizeof(char) * len);
+	snprintf(val, len, "edge_create(%s, '%s', %s)", to,
+		c, owner ? "true" : "false");
+	free(c);
+	return val;
+}
+
 struct genresult*
 util_gen_edge(struct edge *e, int num)
 {
 	assert(e->dest != NULL);
 	struct genresult *r = util_gen_automaton(e->dest, num);
 	num = r->num;
-	char *name = util_name(LEX_NAME_EDGE, num++);
-	char *c = util_proper_char(e->c);
-	printf("struct edge *%s = edge_create(%s, '%s', %s);\n", name, r->lval,
-		c, e->owner ? "true" : "false");
-	free(c);
+	char *command = gen_edge_create(r->lval, e->c, e->owner);
 	genresult_destroy(r);
-	return genresult_create(num, name);
+	return genresult_create(r->num, command);
 }
 
 struct genresult*
@@ -180,6 +190,6 @@ util_gen(struct fsmlist *l, char *varname, FILE *out)
 	printf("\n");
 	util_gen_driver(varname);
 	printf("\n");
-	printf("/* fsm_destroy(%s); */\n", varname);
+	printf("fsm_destroy(%s);\n", varname);
 	printf("\n/* END */\n");
 }

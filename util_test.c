@@ -11,15 +11,14 @@ void
 run()
 {
 	struct { char *name; char *regex; } patterns[] = {
-		{"vowel", "ab"},
+		{"vowel", "[aeiou]"},
 	};
 	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
 		struct fsm *s = util_fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, patterns[i].name, s);
 	}
-	/*fsm_print(list->s);*/
-	/*util_gen(list, "lex_automaton", NULL);*/
+	util_gen(list, "lex_automaton", NULL);
 }
 
 typedef void (*test)(void);
@@ -28,7 +27,7 @@ int
 main()
 {
 	test tests[] = {
-		/*run,*/
+		run,
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();

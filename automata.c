@@ -92,11 +92,11 @@ void edge_destroy(struct edge *e)
 struct fsm*
 automata_concat(struct fsm *s, struct fsm *t, bool owner)
 {
-	int owners = owner ? 0 : 1;
+	int nowners = owner ? 0 : 1;
 	for (struct fsmlist *l = fsm_finals(s); l != NULL; l = l->next) {
 		assert(l->s->accepting);
 		l->s->accepting = false;
-		fsm_addedge(l->s, edge_create(t, '\0', owners++ > 0));
+		fsm_addedge(l->s, edge_create(t, '\0', nowners++ == 0));
 	}
 	return s;
 }
@@ -491,6 +491,23 @@ fsm_print_edge(struct edge *e, int level, struct fsmcounter *cnt, struct
 	return num;
 }
 
+static char*
+properc(char c)
+{
+	int len;
+	char *n;
+	if (c == '\0') {
+		len = strlen("ε") + 1;
+		n = (char *) malloc(sizeof(char) * len);
+		snprintf(n, len, "ε");
+	} else {
+		len = 2;
+		n = (char *) malloc(sizeof(char) * len);
+		snprintf(n, len, "%c", c);
+	}
+	return n;
+}
+
 int
 fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
 		struct circuitbreaker *tr)
@@ -501,7 +518,9 @@ fsm_print_act(struct fsm *s, int level, struct fsmcounter *cnt,
 	for (int i = 0; i < s->nedges; i++) {
 		struct edge *e = s->edges[i];
 		fsm_print_edge_indent(level);
-		printf("-- %c -->", e->c);
+		char *proper = properc(e->c);
+		printf("-- %s -%s>", proper, e->owner ? ":" : "-");
+		free(proper);
 		struct circuitbreaker *trnew = circuitbreaker_copy(tr);
 		num += fsm_print_edge(e, level + 1, cnt, trnew);
 		circuitbreaker_destroy(trnew);
