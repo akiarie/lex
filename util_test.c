@@ -10,16 +10,11 @@
 void
 run()
 {
-	struct { char *name; char *regex; } patterns[] = {
-		{"vowel", "[aeiou]"},
-		{"vword", "{vowel}[a-z]*"},
+	struct token tokens[] = {
+		{"vowel", "[ae]"},
+		{"vowelb", "{vowel}b"},
 	};
-	struct fsmlist *list = NULL;
-	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = util_fsm_fromstring(patterns[i].regex, list);
-		list = fsmlist_append(list, patterns[i].name, s);
-	}
-	util_gen(list, "lex_automaton", NULL);
+	util_gen(&tokens[0], 2, NULL);
 }
 
 typedef void (*test)(void);

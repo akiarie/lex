@@ -6,6 +6,7 @@
 #include "automata.h"
 #include "thompson.h"
 #include "util_gen.c"
+#include "util.h"
 
 static struct fsm*
 util_fsm_fromtree(struct tnode* tree, struct fsmlist *l)
@@ -81,9 +82,16 @@ util_numlen(int num)
 	return len;
 }
 
-#define LEX_NAME_FSM "ln_fsm"
+#define LEX_AUTOMATON "lex_automaton"
+#define LEX_FSMLIST "ln_fsmlist"
 
-static char*
+static void
+util_gen_driver()
+{
+	printf("/* driver code based on %s */\n", LEX_AUTOMATON);
+}
+
+char*
 util_name(char *type, int num)
 {
 	int len = strlen(type) + util_numlen(num) + 1;
@@ -92,103 +100,48 @@ util_name(char *type, int num)
 	return name;
 }
 
-static char*
-proper_char(char c)
-{
-	int len;
-	char *s;
-	if (c == '\0') {
-		len = 2 + 1;
-		s = (char *) malloc(sizeof(char) * len);
-		snprintf(s, len, "\\0");
-	} else {
-		len = 1 + 1;
-		s = (char *) malloc(sizeof(char) * len);
-		snprintf(s, len, "%c", c);
-	}
-	return s;
-}
-
-struct genresult {
-	int num;
-	char *lval;
-};
-
-static struct genresult*
-genresult_create(int num, char *lval)
-{
-	struct genresult *r = (struct genresult *) malloc(sizeof(struct genresult));
-	r->num = num;
-	r->lval = lval;
-	return r;
-}
-
 static void
-genresult_destroy(struct genresult *r)
+util_gen_fsmlist_destroy(FILE *out)
 {
-	free(r->lval);
-	free(r);
-}
-
-static struct genresult*
-util_gen_automaton(struct fsm *s, int num);
-
-static char*
-gen_edge_create(char *to, char improperc, bool owner)
-{
-	char *ownerstr = owner ? "true" : "false";
-	char *c = proper_char(improperc);
-	int len = strlen("edge_create(, '', )") + strlen(to) + strlen(c) +
-		strlen(ownerstr) + 1;
-	char *val = (char *) malloc(sizeof(char) * len);
-	snprintf(val, len, "edge_create(%s, '%s', %s)", to,
-		c, owner ? "true" : "false");
-	free(c);
-	return val;
-}
-
-static struct genresult*
-util_gen_edge(struct edge *e, int num)
-{
-	assert(e->dest != NULL);
-	struct genresult *r = util_gen_automaton(e->dest, num);
-	num = r->num;
-	char *command = gen_edge_create(r->lval, e->c, e->owner);
-	genresult_destroy(r);
-	return genresult_create(r->num, command);
-}
-
-static struct genresult*
-util_gen_automaton(struct fsm *s, int num)
-{
-	char *name = util_name(LEX_NAME_FSM, num++);
-	printf("struct fsm *%s = fsm_create(%s);\n", name,
-		s->accepting ? "true" : "false");
-	for (int i = 0; i < s->nedges; i++) {
-		struct genresult *r = util_gen_edge(s->edges[i], num);
-		num = r->num;
-		printf("fsm_addedge(%s, %s);\n", name, r->lval);
-		genresult_destroy(r);
-	}
-	return genresult_create(num, name);
-}
-
-static void
-util_gen_driver(char *name)
-{
-	printf("/* driver code based on %s */\n", name);
+	char *lname = util_name(LEX_FSMLIST, 0);
+	printf("for (struct fsmlist *%s = %s; %s != NULL; %s = %s->next) {\n",
+		lname, LEX_AUTOMATON, lname, lname, lname);
+	printf("\tfsm_destroy(%s->s);\n", lname);
+	printf("}\n");
+	free(lname);
+	printf("fsmlist_destroy(%s);\n", lname);
 }
 
 void
-util_gen(struct fsmlist *l, char *varname, FILE *out)
+util_gen(struct token *tokens, int len, FILE *out)
 {
 	printf("\n/* BEGIN */\n\n");
-	struct genresult *r = util_gen_automaton(l->s, 0);
-	printf("struct fsm *%s = %s;\n", varname, r->lval);
-	genresult_destroy(r);
+
+	/* generate tokens */
+	printf("struct { char *name; char *regex; } tokens[] = {\n");
+	for (struct token *tk = tokens; tk < tokens + len; tk++) {
+		printf("\t{\"%s\",\t\"%s\"},\n", tk->name, tk->regex);
+	}
+	printf("};\n");
+
+	/* generate fsmlist based on tokens */
+	printf("struct fsmlist *%s = NULL;\n", LEX_AUTOMATON);
+	printf("for (int i = 0; i < %d; i++) {\n", len);
+	printf("\tstruct fsm *s = util_fsm_fromstring(tokens[i].regex, %s);\n",
+		LEX_AUTOMATON);
+	printf("\t%s = fsmlist_append(%s, tokens[i].name, s);\n",
+		LEX_AUTOMATON, LEX_AUTOMATON);
+	printf("};\n");
+
 	printf("\n");
-	util_gen_driver(varname);
+
+	util_gen_driver();
+
 	printf("\n");
-	printf("fsm_destroy(%s);\n", varname);
+
+	/* destroy objects */
+	util_gen_fsmlist_destroy(out);
+	printf("fsmlist_destroy(%s);\n", LEX_AUTOMATON);
+
 	printf("\n/* END */\n");
 }
