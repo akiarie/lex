@@ -1,5 +1,7 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include<string.h>
+#include<assert.h>
 
 #include "thompson.h"
 #include "automata.h"
@@ -67,10 +69,23 @@ lex_fsm_fromstring(char *input, struct fsmlist *l)
 	return s;
 }
 
+static char*
+dynamic_name(char *static_name)
+{
+	assert(static_name != NULL);
+	int len = strlen(static_name) + 1;
+	char *name = (char *) malloc(sizeof(char) * len);
+	snprintf(name, len, "%s", static_name);
+	return name;
+}
 
 struct fsmlist*
 lexer(struct token *tokens, int len)
 {
-	fprintf(stderr, "lexer NOT IMPLEMENTED\n");
-	exit(1);
+	struct fsmlist *l = NULL;
+	for (int i = 0; i < len; i++) {
+		struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);
+		l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);
+	}
+	return l;
 }

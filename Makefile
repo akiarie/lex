@@ -42,7 +42,7 @@ lex_test: lex_test.c lex.o automata.o thompson.o
 example: lex
 	@cd examples; ../lex lex.l
 
-check: thompson_test automata_test gen_test
+check: thompson_test automata_test gen_test lex_test
 	@./run-tests.sh
 
 clean-tests: 

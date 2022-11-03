@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<strings.h>
 
+#include "automata.h"
 #include "lex.h"
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
@@ -13,7 +14,11 @@ run()
 		{"vowel", "[ae]"},
 		{"vowelb", "{vowel}b"},
 	};
-	/*util_gen(&tokens[0], 2, NULL);*/
+	struct fsmlist *l = lexer(tokens, LEN(tokens));
+	for (struct fsmlist *m = l; m != NULL; m = m->next) {
+		fsm_destroy(m->s);
+	}
+	fsmlist_destroy(l);
 }
 
 typedef void (*test)(void);
