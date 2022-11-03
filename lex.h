@@ -13,6 +13,6 @@ struct token {
 };
 
 struct fsmlist*
-lex_lexer(struct token *tokens, int len);
+lexer(struct token *tokens, int len);
 
 #endif

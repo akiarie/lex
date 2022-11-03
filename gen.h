@@ -2,7 +2,7 @@
 #define LEX_GEN
 
 
-//void
-//util_gen(struct token *tokens, int len, FILE *out);
+void
+gen(struct token *tokens, int len, FILE *out);
 
 #endif

@@ -4,6 +4,7 @@
 #include<string.h>
 
 #include "lex.h"
+#include "lex_gen.c"
 
 static int
 numlen(int num)
@@ -46,10 +47,23 @@ gen_fsmlist_destroy(FILE *out)
 	printf("fsmlist_destroy(%s);\n", lname);
 }
 
+static void
+libraries(FILE *out)
+{
+	for (int i = 0; i < lex_gen_file_len; i++) {
+		putchar(lex_gen_file[i]);
+	}
+}
+
 void
 gen(struct token *tokens, int len, FILE *out)
 {
 	printf("\n/* BEGIN */\n\n");
+
+	printf("/* BEGIN lex_gen.c */\n");
+	libraries(out);
+	printf("/* END lex_gen.c */\n");
+	printf("\n");
 
 	/* generate tokens */
 	printf("struct { char *name; char *regex; } tokens[] = {\n");
@@ -59,13 +73,8 @@ gen(struct token *tokens, int len, FILE *out)
 	printf("};\n");
 
 	/* generate fsmlist based on tokens */
-	printf("struct fsmlist *%s = NULL;\n", LEX_AUTOMATON);
-	printf("for (int i = 0; i < %d; i++) {\n", len);
-	printf("\tstruct fsm *s = fsm_fromstring(tokens[i].regex, %s);\n",
-		LEX_AUTOMATON);
-	printf("\t%s = fsmlist_append(%s, tokens[i].name, s);\n",
-		LEX_AUTOMATON, LEX_AUTOMATON);
-	printf("};\n");
+	printf("struct fsmlist *%s = lex_lexer(tokens, %d);\n", LEX_AUTOMATON,
+		len);
 
 	printf("\n");
 

@@ -3,6 +3,7 @@
 
 #include "thompson.h"
 #include "automata.h"
+#include "lex.h"
 
 static struct fsm*
 fsm_fromtree(struct tnode* tree, struct fsmlist *l)
@@ -64,4 +65,12 @@ lex_fsm_fromstring(char *input, struct fsmlist *l)
 	struct fsm *s = fsm_fromtree(t, l);
 	tnode_destroy(t);
 	return s;
+}
+
+
+struct fsmlist*
+lexer(struct token *tokens, int len)
+{
+	fprintf(stderr, "lexer NOT IMPLEMENTED\n");
+	exit(1);
 }
