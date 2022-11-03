@@ -2,8 +2,7 @@
 #include<stdlib.h>
 #include<strings.h>
 
-#include "automata.h"
-#include "util.h"
+#include "lex.h"
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -14,7 +13,7 @@ run()
 		{"vowel", "[ae]"},
 		{"vowelb", "{vowel}b"},
 	};
-	util_gen(&tokens[0], 2, NULL);
+	/*util_gen(&tokens[0], 2, NULL);*/
 }
 
 typedef void (*test)(void);
