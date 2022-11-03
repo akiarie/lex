@@ -7,4 +7,4 @@ lex
 *.gch
 *.dSYM
 a.out
-util_gen.c
+lex_gen.c
