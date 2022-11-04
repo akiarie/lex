@@ -12,7 +12,19 @@ struct token {
 	char *regex;
 };
 
-struct fsmlist*
-lexer(struct token *tokens, int len);
+struct lexer {
+	struct fsmlist *l;
+	char *input;
+	int pos;
+};
+
+struct lexer*
+lexer_create(struct fsmlist *, char *);
+
+void
+lexer_destroy(struct lexer *);
+
+struct lexer*
+lex(struct token *tokens, int len, char *);
 
 #endif

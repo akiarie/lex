@@ -14,11 +14,8 @@ run()
 		{"vowel", "[ae]"},
 		{"vowelb", "{vowel}b"},
 	};
-	struct fsmlist *l = lexer(tokens, LEN(tokens));
-	for (struct fsmlist *m = l; m != NULL; m = m->next) {
-		fsm_destroy(m->s);
-	}
-	fsmlist_destroy(l);
+	struct lexer *lx = lex(tokens, LEN(tokens), "abra cada bra");
+	lexer_destroy(lx);
 }
 
 typedef void (*test)(void);

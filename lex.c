@@ -79,13 +79,42 @@ dynamic_name(char *static_name)
 	return name;
 }
 
-struct fsmlist*
-lexer(struct token *tokens, int len)
+struct lexer*
+lexer_create(struct fsmlist *l, char *input)
+{
+	assert(l != NULL && input != NULL);
+	struct lexer *lx = (struct lexer *) malloc(sizeof(struct lexer));
+	lx->l = l;
+	lx->input = dynamic_name(input);
+	lx->pos = 0;
+	return lx;
+}
+
+void
+lexer_destroy(struct lexer *lx)
+{
+	assert(lx != NULL);
+	for (struct fsmlist *m = lx->l; m != NULL; m = m->next) {
+		fsm_destroy(m->s);
+	}
+	fsmlist_destroy(lx->l);
+	free(lx->input);
+	free(lx);
+}
+
+struct lexer*
+lex(struct token *tokens, int len, char *input)
 {
 	struct fsmlist *l = NULL;
 	for (int i = 0; i < len; i++) {
 		struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);
 		l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);
 	}
-	return l;
+	return lexer_create(l, input);
+}
+
+char*
+lex_drive(struct fsmlist *l)
+{
+	return NULL;
 }
