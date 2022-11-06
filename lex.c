@@ -7,7 +7,7 @@
 #include "automata.h"
 #include "lex.h"
 
-static struct fsm*
+static struct fsm *
 fsm_fromtree(struct tnode* tree, struct fsmlist *l)
 {
 	char *typename;
@@ -25,8 +25,9 @@ fsm_fromtree(struct tnode* tree, struct fsmlist *l)
 		if (tree->right == NULL || tree->right->type == NT_EMPTY) {
 			return fsm_fromtree(tree->left, l);
 		}
-		return automata_concat(fsm_fromtree(tree->left, l),
-			fsm_fromtree(tree->right, l), true);
+		start = fsm_fromtree(tree->left, l);
+		automata_concat(start, fsm_fromtree(tree->right, l), true);
+		return start;
 
 	case NT_CLOSED_BLANK:
 		return fsm_fromtree(tree->left, l);
@@ -60,7 +61,7 @@ fsm_fromtree(struct tnode* tree, struct fsmlist *l)
 	}
 }
 
-struct fsm*
+struct fsm *
 lex_fsm_fromstring(char *input, struct fsmlist *l)
 {
 	struct tnode *t = thompson_parse(input);
@@ -69,54 +70,46 @@ lex_fsm_fromstring(char *input, struct fsmlist *l)
 	return s;
 }
 
-static char*
-dynamic_name(char *static_name)
-{
-	assert(static_name != NULL);
-	int len = strlen(static_name) + 1;
-	char *name = (char *) malloc(sizeof(char) * len);
-	snprintf(name, len, "%s", static_name);
-	return name;
-}
+/*static char**/
+/*dynamic_name(char *static_name)*/
+/*{*/
+	/*assert(static_name != NULL);*/
+	/*int len = strlen(static_name) + 1;*/
+	/*char *name = (char *) malloc(sizeof(char) * len);*/
+	/*snprintf(name, len, "%s", static_name);*/
+	/*return name;*/
+/*}*/
 
-static struct lexer*
-lexer_create_act(struct fsmlist *l, char *input)
-{
-	assert(l != NULL && input != NULL);
-	struct lexer *lx = (struct lexer *) malloc(sizeof(struct lexer));
-	lx->l = l;
-	lx->input = dynamic_name(input);
-	lx->pos = 0;
-	return lx;
-}
+/*static struct lexer**/
+/*lexer_create_act(struct fsmlist *l, char *input)*/
+/*{*/
+	/*assert(l != NULL && input != NULL);*/
+	/*struct lexer *lx = (struct lexer *) malloc(sizeof(struct lexer));*/
+	/*lx->l = l;*/
+	/*lx->input = dynamic_name(input);*/
+	/*lx->pos = 0;*/
+	/*return lx;*/
+/*}*/
 
-void
-lexer_destroy(struct lexer *lx)
-{
-	assert(lx != NULL);
-	for (struct fsmlist *m = lx->l; m != NULL; m = m->next) {
-		fsm_destroy(m->s);
-	}
-	fsmlist_destroy(lx->l);
-	free(lx->input);
-	free(lx);
-}
+/*void*/
+/*lexer_destroy(struct lexer *lx)*/
+/*{*/
+	/*assert(lx != NULL);*/
+	/*for (struct fsmlist *m = lx->l; m != NULL; m = m->next) {*/
+		/*fsm_destroy(m->s);*/
+	/*}*/
+	/*fsmlist_destroy(lx->l);*/
+	/*free(lx->input);*/
+	/*free(lx);*/
+/*}*/
 
-struct lexer*
-lexer_create(struct token *tokens, int len, char *input)
-{
-	struct fsmlist *l = NULL;
-	for (int i = 0; i < len; i++) {
-		struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);
-		l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);
-	}
-	return lexer_create_act(l, input);
-}
-
-char*
-lexer_next(struct lexer *lx)
-{
-	if (lx->input[lx->pos] == '\0') {
-		return NULL;
-	}
-}
+/*struct lexer**/
+/*lexer_create(struct token *tokens, int len, char *input)*/
+/*{*/
+	/*struct fsmlist *l = NULL;*/
+	/*for (int i = 0; i < len; i++) {*/
+		/*struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);*/
+		/*l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);*/
+	/*}*/
+	/*return lexer_create_act(l, input);*/
+/*}*/

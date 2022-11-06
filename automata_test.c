@@ -13,28 +13,26 @@ struct fsmcase {
 	char *input;
 };
 
-bool
-runfsmcase(struct fsm *nfa, struct fsmcase *cs)
+bool fsm_simulate(struct fsm *s, char *input)
 {
-	struct fsm *s = fsm_copy(nfa);
-	struct fsmlist *l = fsmlist_fromfsm(s);
-	for (char *c = cs->input; *c != '\0'; c++) {
-		l = fsmlist_sim(l, *c);
-		if (l == NULL) {
-			break;
-		}
+	for (char *c = input; *c != '\0'; c++) {
+		s = fsm_sim(s, *c);
+		assert(s != NULL);
 	}
-	bool response = fsmlist_accepting(l) == cs->shouldaccept;
-	fsmlist_destroy(l);
-	fsm_destroy(s);
-	return response;
+	return s->accepting;
+}
+
+bool
+runfsmcase(struct fsm *s, struct fsmcase *cs)
+{
+	return fsm_simulate(s, cs->input) == cs->shouldaccept;
 }
 
 void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 {
 	for (int i = 0; i < len; i++) {
 		if (!runfsmcase(s, &cases[i])) {
-			fprintf(stderr, "'%s' case failed\n", cases[i].input);
+			fprintf(stderr, "\"%s\" case failed\n", cases[i].input);
 			exit(1);
 		}
 	}
@@ -43,18 +41,71 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = lex_fsm_fromstring("a*b", NULL);
+	struct fsm *s = lex_fsm_fromstring("ab", NULL);
 	struct fsmcase cases[] = {
+		{false,	""},
+		{false,	"a"},
+		{false,	"b"},
+		{false,	"aa"},
+		{true,	"ab"},
+	};
+	run_cases(cases, LEN(cases), s);
+	fsm_destroy(s);
+
+	s = lex_fsm_fromstring("a|b|cd", NULL);
+	struct fsmcase cases2[] = {
+		{false,	""},
+		{true,	"a"},
+		{true,	"b"},
+		{false, "aa"},
+		{false, "ab"},
+		{false, "ba"},
+		{false, "bb"},
+		{true,	"cd"},
+	};
+	run_cases(cases2, LEN(cases2), s);
+	fsm_destroy(s);
+
+	s = lex_fsm_fromstring("a?b?", NULL);
+	struct fsmcase cases3[] = {
+		{true,	""},
+		{true,	"a"},
+		{true,	"b"},
+		{true,	"ab"},
+		{false,	"ba"},
+	};
+	run_cases(cases3, LEN(cases3), s);
+	fsm_destroy(s);
+
+	s = lex_fsm_fromstring("a*b", NULL);
+	struct fsmcase cases4[] = {
 		{false,	""},
 		{false,	"a"},
 		{false,	"aa"},
 		{true,	"b"},
+		{true,	"ab"},
 		{true,	"aaab"},
 		{false,	"bc"},
 		{false,	"abc"},
 		{false,	"aabc"},
 	};
-	run_cases(cases, LEN(cases), s);
+	run_cases(cases4, LEN(cases4), s);
+	fsm_destroy(s);
+
+	s = lex_fsm_fromstring("a[bc0-3]*d", NULL);
+	struct fsmcase cases5[] = {
+		{false,	""},
+		{false,	"a"},
+		{false,	"b"},
+		{false,	"c"},
+		{false,	"d"},
+		{false,	"ab"},
+		{false,	"ac"},
+		{true,	"ad"},
+		{true,	"abcccd"},
+		{true,	"ab01cd"},
+	};
+	run_cases(cases5, LEN(cases5), s);
 	fsm_destroy(s);
 }
 
@@ -77,7 +128,7 @@ second_tier()
 	fsm_destroy(s);
 }
 
-static char*
+static char *
 dynamic_name(char *static_name)
 {
 	assert(static_name != NULL);
@@ -142,5 +193,4 @@ main()
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();
 	}
-
 }

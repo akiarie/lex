@@ -2,29 +2,29 @@
 #define LEX_AUTOMATA
 #include<stdbool.h>
 
+/* edge */
+
+struct fsm;
+
 struct edge {
+	char c;
 	struct fsm *dest;
 	bool owner;
-	char c;
 };
 
-struct edge*
-edge_create(struct fsm*, char, bool);
+struct edge *
+edge_create(struct fsm *dest, char c, bool owner);
+
+/* fsm */
 
 struct fsm {
 	bool accepting;
-	int nedges;
+	size_t nedges;
 	struct edge **edges;
 };
 
-struct fsm*
-fsm_copy(struct fsm *);
-
-struct fsm*
+struct fsm *
 fsm_create(bool accepting);
-
-struct fsmlist*
-fsm_finals(struct fsm *);
 
 void
 fsm_destroy(struct fsm *);
@@ -32,53 +32,46 @@ fsm_destroy(struct fsm *);
 void
 fsm_addedge(struct fsm *, struct edge *);
 
+struct fsm *
+fsm_sim(struct fsm *, char);
+
 void
 fsm_print(struct fsm *);
+
+struct fsmset {
+	struct fsm **arr;
+	size_t len;
+};
+
+/* fsmlist */
 
 struct fsmlist {
 	char *name;
 	struct fsm *s;
 	struct fsmlist *next;
-	struct circuitbreaker *tr;
 };
-
-struct fsmlist*
-fsmlist_sim(struct fsmlist *, char c);
-
-void
-fsmlist_print(struct fsmlist *);
-
-bool
-fsmlist_accepting(struct fsmlist *);
-
-struct fsmlist*
-fsmlist_fromfsm(struct fsm *);
-
-struct fsmlist*
-fsmlist_append(struct fsmlist *, char *name, struct fsm *s);
 
 void
 fsmlist_destroy(struct fsmlist *);
 
-struct fsmlist*
-fsmlist_copy(struct fsmlist *);
+struct fsmlist *
+fsmlist_append(struct fsmlist *, char *, struct fsm *);
 
-struct fsmlist*
-fsmlist_tail(struct fsmlist *);
+/* automata */
 
-struct fsm*
+void
 automata_concat(struct fsm *, struct fsm *, bool);
 
-struct fsm*
+struct fsm *
 automata_union(struct fsm *, struct fsm *);
 
-struct fsm*
-automata_closure(struct fsm *, char closure);
+struct fsm *
+automata_closure(struct fsm *, char);
 
-struct fsm*
-automata_class(char *value);
+struct fsm *
+automata_class(char *);
 
-struct fsm*
+struct fsm *
 automata_id(char *id, struct fsmlist *l);
 
 #endif

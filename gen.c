@@ -26,7 +26,7 @@ gen_driver()
 	printf("/* driver code based on %s */\n", LEX_AUTOMATON);
 }
 
-static char*
+static char *
 name(char *type, int num)
 {
 	int len = strlen(type) + numlen(num) + 1;
