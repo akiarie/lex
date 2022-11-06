@@ -11,10 +11,12 @@ void
 run()
 {
 	struct token tokens[] = {
+		{"ws", "[ ]"},
 		{"vowel", "[ae]"},
 		{"vowelb", "{vowel}b"},
 	};
-	struct lexer *lx = lex(tokens, LEN(tokens), "abra cada bra");
+	struct lexer *lx = lexer_create(tokens, LEN(tokens), "abra cada bra");
+	fsmlist_print(lx->l);
 	lexer_destroy(lx);
 }
 

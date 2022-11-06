@@ -496,14 +496,22 @@ properc(char c)
 {
 	int len;
 	char *n;
-	if (c == '\0') {
+	switch (c) {
+	case '\0':
 		len = strlen("ε") + 1;
 		n = (char *) malloc(sizeof(char) * len);
 		snprintf(n, len, "ε");
-	} else {
+		break;
+	case ' ':
+		len = 3 + 1;
+		n = (char *) malloc(sizeof(char) * len);
+		snprintf(n, len, "' '");
+		break;
+	default:
 		len = 2;
 		n = (char *) malloc(sizeof(char) * len);
 		snprintf(n, len, "%c", c);
+		break;
 	}
 	return n;
 }

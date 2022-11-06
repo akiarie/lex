@@ -79,8 +79,8 @@ dynamic_name(char *static_name)
 	return name;
 }
 
-struct lexer*
-lexer_create(struct fsmlist *l, char *input)
+static struct lexer*
+lexer_create_act(struct fsmlist *l, char *input)
 {
 	assert(l != NULL && input != NULL);
 	struct lexer *lx = (struct lexer *) malloc(sizeof(struct lexer));
@@ -103,18 +103,20 @@ lexer_destroy(struct lexer *lx)
 }
 
 struct lexer*
-lex(struct token *tokens, int len, char *input)
+lexer_create(struct token *tokens, int len, char *input)
 {
 	struct fsmlist *l = NULL;
 	for (int i = 0; i < len; i++) {
 		struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);
 		l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);
 	}
-	return lexer_create(l, input);
+	return lexer_create_act(l, input);
 }
 
 char*
-lex_drive(struct fsmlist *l)
+lexer_next(struct lexer *lx)
 {
-	return NULL;
+	if (lx->input[lx->pos] == '\0') {
+		return NULL;
+	}
 }

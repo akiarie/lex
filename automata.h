@@ -43,7 +43,7 @@ struct fsmlist {
 };
 
 struct fsmlist*
-fsmlist_sim(struct fsmlist *states, char c);
+fsmlist_sim(struct fsmlist *, char c);
 
 void
 fsmlist_print(struct fsmlist *);

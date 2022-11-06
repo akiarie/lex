@@ -67,8 +67,8 @@ gen(struct token *tokens, int len, FILE *out)
 
 	/* generate tokens */
 	printf("struct { char *name; char *regex; } tokens[] = {\n");
-	for (struct token *tk = tokens; tk < tokens + len; tk++) {
-		printf("\t{\"%s\",\t\"%s\"},\n", tk->tag, tk->regex);
+	for (struct token *t = tokens; t < tokens + len; t++) {
+		printf("\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);
 	}
 	printf("};\n");
 

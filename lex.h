@@ -19,12 +19,12 @@ struct lexer {
 };
 
 struct lexer*
-lexer_create(struct fsmlist *, char *);
+lexer_create(struct token *tokens, int len, char *);
 
 void
 lexer_destroy(struct lexer *);
 
-struct lexer*
-lex(struct token *tokens, int len, char *);
+char*
+lexer_next(struct lexer *);
 
 #endif
