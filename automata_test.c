@@ -180,6 +180,18 @@ piglatin()
 	fsmlist_destroy(list);
 }
 
+void
+lists()
+{
+	struct { char *name; char *regex; } patterns[] = {
+		{"letter",	"[A-Za-z]"},
+		{"vowel",	"[AEIOUaeiou]"},
+		{"cons",	"[BCDFGHJKLMNPQRSTVWXYZbcdfghjklmnpqrstvwxyz]"},
+		{"vword",	"{vowel}{letter}*"},
+		{"cword",	"{cons}{letter}*"},
+	};
+}
+
 typedef void (*test)(void);
 
 int
@@ -189,6 +201,7 @@ main()
 		simple_expressions,
 		second_tier,
 		piglatin,
+		lists,
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();

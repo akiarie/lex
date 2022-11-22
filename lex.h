@@ -4,7 +4,7 @@
 struct fsm;
 struct fsmlist;
 
-struct fsm*
+struct fsm *
 lex_fsm_fromstring(char *regex, struct fsmlist *);
 
 struct token {
@@ -12,19 +12,21 @@ struct token {
 	char *regex;
 };
 
-struct lexer {
-	struct fsmlist *l;
-	char *input;
-	int pos;
+/* pattern: pattern-action pairs */
+struct pattern {
+	char *name, *action;
 };
 
-struct lexer*
-lexer_create(struct token *tokens, int len, char *);
+struct lexer {
+	char *pre, *post; /* raw sections */
+	struct pattern *patterns;
+	struct fsmlist *l; /* named automata */
+};
+
+struct lexer *
+lexer_create(struct token *tokens, int len);
 
 void
 lexer_destroy(struct lexer *);
-
-char*
-lexer_next(struct lexer *);
 
 #endif

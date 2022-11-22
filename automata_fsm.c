@@ -225,3 +225,17 @@ fsmlist_destroy(struct fsmlist *l)
 	}
 	free(l);
 }
+
+struct fsmlist *
+fsmlist_copy(struct fsmlist *l)
+{
+	fprintf(stderr, "fsmlist_copy NOT IMPLEMENTED\n");
+	exit(1);
+}
+
+struct findresult *
+fsmlist_findnext(struct fsmlist *l, char *input)
+{
+	fprintf(stderr, "fsmlist_findnext NOT IMPLEMENTED\n");
+	exit(1);
+}

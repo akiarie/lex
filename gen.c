@@ -21,9 +21,9 @@ numlen(int num)
 #define LEX_FSMLIST "ln_fsmlist"
 
 static void
-gen_driver()
+gen_driver(FILE *out)
 {
-	printf("/* driver code based on %s */\n", LEX_AUTOMATON);
+	fprintf(out, "/* driver code based on %s */\n", LEX_AUTOMATON);
 }
 
 static char *
@@ -39,12 +39,13 @@ static void
 gen_fsmlist_destroy(FILE *out)
 {
 	char *lname = name(LEX_FSMLIST, 0);
-	printf("for (struct fsmlist *%s = %s; %s != NULL; %s = %s->next) {\n",
+	fprintf(out,
+		"for (struct fsmlist *%s = %s; %s != NULL; %s = %s->next) {\n",
 		lname, LEX_AUTOMATON, lname, lname, lname);
-	printf("\tfsm_destroy(%s->s);\n", lname);
-	printf("}\n");
+	fprintf(out, "\tfsm_destroy(%s->s);\n", lname);
+	fprintf(out, "}\n");
 	free(lname);
-	printf("fsmlist_destroy(%s);\n", lname);
+	fprintf(out, "fsmlist_destroy(%s);\n", lname);
 }
 
 static void
@@ -58,33 +59,33 @@ libraries(FILE *out)
 void
 gen(struct token *tokens, int len, FILE *out)
 {
-	printf("\n/* BEGIN */\n\n");
+	fprintf(out, "\n/* BEGIN */\n\n");
 
-	printf("/* BEGIN lex_gen.c */\n");
+	fprintf(out, "/* BEGIN lex_gen.c */\n");
 	libraries(out);
-	printf("/* END lex_gen.c */\n");
-	printf("\n");
+	fprintf(out, "/* END lex_gen.c */\n");
+	fprintf(out, "\n");
 
 	/* generate tokens */
-	printf("struct { char *name; char *regex; } tokens[] = {\n");
+	fprintf(out, "struct token tokens[] = {\n");
 	for (struct token *t = tokens; t < tokens + len; t++) {
-		printf("\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);
+		fprintf(out, "\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);
 	}
-	printf("};\n");
+	fprintf(out, "};\n");
 
 	/* generate fsmlist based on tokens */
-	printf("struct fsmlist *%s = lex_lexer(tokens, %d);\n", LEX_AUTOMATON,
-		len);
+	fprintf(out, "struct fsmlist *%s = lexer_create(tokens, %d);\n",
+		LEX_AUTOMATON, len);
 
-	printf("\n");
+	fprintf(out, "\n");
 
-	gen_driver();
+	gen_driver(out);
 
-	printf("\n");
+	fprintf(out, "\n");
 
 	/* destroy objects */
 	gen_fsmlist_destroy(out);
-	printf("fsmlist_destroy(%s);\n", LEX_AUTOMATON);
+	fprintf(out, "fsmlist_destroy(%s);\n", LEX_AUTOMATON);
 
-	printf("\n/* END */\n");
+	fprintf(out, "\n/* END */\n");
 }

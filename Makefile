@@ -11,10 +11,12 @@ automata.o: automata.c automata_fsm.c automata_util.c automata.h thompson.h
 	$(CC) -c automata.c
 
 # avails the automata library so that util can generate code that refers to it
-lex_gen.c: automata.h automata.c lex.h lex.c
-	@cat automata.h automata.c lex.h lex.c \
+lex_gen.c: automata.h automata.c automata_util.c automata_fsm.c lex.h lex.c
+	@cat automata.h automata_util.c automata_fsm.c automata.c lex.h lex.c \
 		| grep -v '#include "automata.h"' - \
-		| grep -v '#include "lexer.h"' - \
+		| grep -v '#include "automata_fsm.c"' - \
+		| grep -v '#include "automata_util.c"' - \
+		| grep -v '#include "lex.h"' - \
 		| xxd -name lex_gen_file -i - > $@
 
 gen.o: gen.c lex_gen.c gen.h lex.h
@@ -33,16 +35,16 @@ thompson_test: thompson_test.c thompson.o
 automata_test: automata_test.c lex.o automata.o thompson.o
 	$(CC) -o $@ automata_test.c lex.o automata.o thompson.o
 
-#gen_test: gen_test.c lex_gen.c gen.o
-	#$(CC) -o $@ gen_test.c gen.o
+gen_test: gen_test.c lex_gen.c gen.o
+	$(CC) -o $@ gen_test.c gen.o
 
-#lex_test: lex_test.c lex.o automata.o thompson.o
-	#$(CC) -o $@ lex_test.c lex.o automata.o thompson.o
+lex_test: lex_test.c lex.o automata.o thompson.o
+	$(CC) -o $@ lex_test.c lex.o automata.o thompson.o
 
 example: lex
 	@cd examples; ../lex lex.l
 
-check: thompson_test automata_test # gen_test lex_test
+check: thompson_test automata_test gen_test lex_test
 	@./run-tests.sh
 
 clean-tests: 
