@@ -1,1 +1,1 @@
-# A Lex that lexes itself
+# A Lex that Lexes Itself
