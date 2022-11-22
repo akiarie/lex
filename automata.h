@@ -65,6 +65,9 @@ struct findresult {
 	int len;
 };
 
+void
+findresult_destroy(struct findresult *r);
+
 /* fsmlist_findnext: simulates the fsms with the input until it can determine
  * the highest-ranking, next match. if no match is found, returns a findresult
  * with fsm == NULL and len set to the number of chars scanned */

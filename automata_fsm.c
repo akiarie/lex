@@ -186,10 +186,9 @@ fsm_sim(struct fsm *s, char c)
 static struct fsmlist*
 fsmlist_create(char *name, struct fsm *s)
 {
-	struct fsmlist *l = (struct fsmlist *) malloc(sizeof(struct fsmlist));
+	struct fsmlist *l = (struct fsmlist *) calloc(1, sizeof(struct fsmlist));
 	l->name = name;
 	l->s = s;
-	l->next = NULL;
 	return l;
 }
 
@@ -226,16 +225,49 @@ fsmlist_destroy(struct fsmlist *l)
 	free(l);
 }
 
+static char *
+dynamic_name(char *static_name)
+{
+	assert(static_name != NULL);
+	int len = strlen(static_name) + 1;
+	char *name = (char *) malloc(sizeof(char) * len);
+	snprintf(name, len, "%s", static_name);
+	return name;
+}
+
 struct fsmlist *
 fsmlist_copy(struct fsmlist *l)
 {
-	fprintf(stderr, "fsmlist_copy NOT IMPLEMENTED\n");
-	exit(1);
+	struct fsmlist *m = fsmlist_create(
+		dynamic_name(l->name), fsm_copy(l->s));
+	if (l->next != NULL) {
+		m->next = fsmlist_copy(l->next);
+	}
+	return m;
+}
+
+static struct findresult *
+findresult_create(char *fsm, int len)
+{
+	struct findresult *r = (struct findresult *)
+		malloc(sizeof(struct findresult));
+	r->fsm = dynamic_name(fsm);
+	r->len = len;
+	return r;
+}
+
+void
+findresult_destroy(struct findresult *r)
+{
+	free(r->fsm);
+	free(r);
 }
 
 struct findresult *
 fsmlist_findnext(struct fsmlist *l, char *input)
 {
+	for (struct fsmlist *m = l; m != NULL; m = m->next) {
+	}
 	fprintf(stderr, "fsmlist_findnext NOT IMPLEMENTED\n");
 	exit(1);
 }
