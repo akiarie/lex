@@ -17,7 +17,9 @@ bool fsm_simulate(struct fsm *s, char *input)
 {
 	for (char *c = input; *c != '\0'; c++) {
 		s = fsm_sim(s, *c);
-		assert(s != NULL);
+		if (s == NULL) {
+			return false;
+		}
 	}
 	return s->accepting;
 }
@@ -177,6 +179,78 @@ piglatin()
 	fsmlist_destroy(list);
 }
 
+struct matchcase {
+	char *input;
+	struct findresult *r;
+};
+
+bool
+runmatchcase(struct fsmlist *l, struct matchcase *cs)
+{
+	struct findresult *r = fsmlist_findnext(l, cs->input);
+	/* value equality */
+	bool eq = (r->fsm == cs->r->fsm && r->len == cs->r->len);
+	findresult_destroy(r);
+	return eq;
+}
+
+int ndigits(int n)
+{
+	int result = 0;
+	for (; n != 0; n /= 10) {
+		result++;
+	}
+	return result;
+}
+
+char *
+nullable_qstring(char *s)
+{
+	if (s == NULL) {
+		return "NULL";
+	}
+	int len = 2 + strlen(s) + 1;
+	char *str = (char *) malloc(sizeof(char) * len);
+	snprintf(str, len, "'%s'", s);
+	return str;
+}
+
+char *
+pretty_findresult(struct findresult *r)
+{
+	char *fsm = nullable_qstring(r->fsm);
+	char *sep = ", ";
+	int len = strlen(fsm) + strlen(sep) + ndigits(r->len) + 2 + 1; /* { } */
+	char *s = (char *) malloc(sizeof(char) * len);
+	snprintf(s, len, "{%s%s%d}", fsm, sep, r->len);
+	return s;
+}
+
+char *
+pretty_case(struct matchcase *cs)
+{
+	char *r = pretty_findresult(cs->r);
+	char *sep = " -> ";
+	char *input = nullable_qstring(cs->input);
+	int len = strlen(input) + strlen(sep) + strlen(r) + 1;
+	char *s = (char *) malloc(sizeof(char) * len);
+	snprintf(s, len, "%s%s%s", input, sep, r);
+	free(r);
+	return s;
+}
+
+void run_matchcases(struct matchcase cases[], int len, struct fsmlist *l)
+{
+	for (int i = 0; i < len; i++) {
+		if (!runmatchcase(l, &cases[i])) {
+			char *prettycs = pretty_case(&cases[i]);
+			fprintf(stderr, "[%s] failed\n", prettycs);
+			free(prettycs);
+			exit(1);
+		}
+	}
+}
+
 void
 lists()
 {
@@ -192,6 +266,14 @@ lists()
 		struct fsm *s = lex_fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, dynamic_name(patterns[i].name), s);
 	}
+	struct matchcase cases[] = {
+		{"-",	&(struct findresult){NULL,	1} },
+		{"a",	&(struct findresult){"letter",	1} },
+		{"b",	&(struct findresult){"letter",	1} },
+		{"ab",	&(struct findresult){"vword",	2} },
+		{"ba",	&(struct findresult){"cword",	2} },
+	};
+	run_matchcases(cases, LEN(cases), list);
 	fsmlist_destroy(list);
 }
 

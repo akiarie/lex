@@ -5,9 +5,6 @@
 
 #include "automata.h"
 
-#ifndef LEX_AUTOMATA_UTIL
-#define LEX_AUTOMATA_UTIL
-
 /* circuitbreaker: tracker to prevent ε-loops */
 struct circuitbreaker {
 	struct fsm *s;
@@ -261,32 +258,3 @@ copymap_append(struct copymap *map, struct fsm *orig, struct fsm *copy)
 	map->next->copy = copy;
 }
 
-
-static struct fsm *
-fsm_copy_act(struct fsm *s, struct copymap *map)
-{
-	assert(s != NULL && map != NULL);
-	struct fsm *prev = copymap_get(map, s);
-	if (prev != NULL) {
-		return prev;
-	}
-	struct fsm *new = fsm_create(s->accepting);
-	copymap_append(map, s, new);
-	for (int i = 0; i < s->nedges; i++) {
-		struct edge *e = s->edges[i];
-		fsm_addedge(new, edge_create(fsm_copy_act(e->dest, map),
-			e->c, e->owner));
-	}
-	return new;
-}
-
-static struct fsm *
-fsm_copy(struct fsm *s)
-{
-	struct copymap *map = copymap_create();
-	struct fsm *new = fsm_copy_act(s, map);
-	copymap_destroy(map);
-	return new;
-}
-
-#endif

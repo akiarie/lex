@@ -57,9 +57,6 @@ fsmlist_destroy(struct fsmlist *);
 struct fsmlist *
 fsmlist_append(struct fsmlist *, char *, struct fsm *);
 
-struct fsmlist *
-fsmlist_copy(struct fsmlist *);
-
 struct findresult {
 	char *fsm;
 	int len;
@@ -70,9 +67,9 @@ findresult_destroy(struct findresult *r);
 
 /* fsmlist_findnext: simulates the fsms with the input until it can determine
  * the highest-ranking, next match. if no match is found, returns a findresult
- * with fsm == NULL and len set to the number of chars scanned */
+ * with fsm == NULL and len set to the number of chars scanned. l is invariant */
 struct findresult *
-fsmlist_findnext(struct fsmlist *, char *input);
+fsmlist_findnext(struct fsmlist *l, char *input);
 
 
 /* automata */

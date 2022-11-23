@@ -4,6 +4,8 @@
 #include "automata.h"
 #include "automata_util.c"
 
+/* edge */
+
 struct edge *
 edge_create(struct fsm *dest, char c, bool owner)
 {
@@ -23,6 +25,8 @@ edge_destroy(struct edge *e)
 	free(e);
 }
 
+
+/* fsmset */
 
 static struct fsmset *
 fsmset_create()
@@ -93,6 +97,9 @@ fsmset_epsclosure(struct fsmset *l)
 static struct fsm *
 fsmset_tofsm(struct fsmset *l)
 {
+	if (l->len == 0) {
+		return NULL;
+	}
 	struct fsm *s = fsm_create(false);
 	for (int i = 0; i < l->len; i++) {
 		struct fsm *t = l->arr[i];
@@ -101,6 +108,9 @@ fsmset_tofsm(struct fsmset *l)
 	}
 	return s;
 }
+
+
+/* fsm */
 
 struct fsm *
 fsm_create(bool accepting)
@@ -183,6 +193,36 @@ fsm_sim(struct fsm *s, char c)
 	return fsmset_tofsm(m);
 }
 
+static struct fsm *
+fsm_copy_act(struct fsm *s, struct copymap *map)
+{
+	assert(s != NULL && map != NULL);
+	struct fsm *prev = copymap_get(map, s);
+	if (prev != NULL) {
+		return prev;
+	}
+	struct fsm *new = fsm_create(s->accepting);
+	copymap_append(map, s, new);
+	for (int i = 0; i < s->nedges; i++) {
+		struct edge *e = s->edges[i];
+		fsm_addedge(new, edge_create(fsm_copy_act(e->dest, map),
+			e->c, e->owner));
+	}
+	return new;
+}
+
+static struct fsm *
+fsm_copy(struct fsm *s)
+{
+	struct copymap *map = copymap_create();
+	struct fsm *new = fsm_copy_act(s, map);
+	copymap_destroy(map);
+	return new;
+}
+
+
+/* fsmlist */
+
 static struct fsmlist*
 fsmlist_create(char *name, struct fsm *s)
 {
@@ -237,7 +277,7 @@ dynamic_name(char *static_name)
 	return name;
 }
 
-struct fsmlist *
+static struct fsmlist *
 fsmlist_copy(struct fsmlist *l)
 {
 	struct fsmlist *m = fsmlist_create(
@@ -246,6 +286,21 @@ fsmlist_copy(struct fsmlist *l)
 		m->next = fsmlist_copy(l->next);
 	}
 	return m;
+}
+
+static struct fsmlist *
+fsmlist_sim(struct fsmlist *l, char c)
+{
+	struct fsmlist *result = NULL;
+	struct fsmlist *m = fsmlist_copy(l);
+	for (struct fsmlist *n = m; n != NULL; n = n->next) {
+		struct fsm *s = fsm_sim(n->s, c);
+		if (s != NULL) {
+			result = fsmlist_append(result, n->name, s);
+		}
+	}
+	fsmlist_destroy(m);
+	return result;
 }
 
 static struct findresult *
@@ -268,8 +323,8 @@ findresult_destroy(struct findresult *r)
 struct findresult *
 fsmlist_findnext(struct fsmlist *l, char *input)
 {
-	for (struct fsmlist *m = l; m != NULL; m = m->next) {
-	}
+	assert(l != NULL && input != '\0');
+	struct fsmlist *m = fsmlist_sim(l, input[0]);
 	fprintf(stderr, "fsmlist_findnext NOT IMPLEMENTED\n");
 	exit(1);
 }

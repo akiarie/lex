@@ -14,7 +14,7 @@ run()
 		{"vowel", "[aeiou]"},
 		{"vowelb", "{vowel}b"},
 	};
-	gen(tokens, 2, stdout);
+	gen(tokens, 2, true, stdout);
 }
 
 typedef void (*test)(void);

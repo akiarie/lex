@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
 #include<assert.h>
 #include<string.h>
 
@@ -49,7 +50,7 @@ gen_fsmlist_destroy(FILE *out)
 }
 
 static void
-libraries(FILE *out)
+gen_preamble(FILE *out)
 {
 	for (int i = 0; i < lex_gen_file_len; i++) {
 		putchar(lex_gen_file[i]);
@@ -57,13 +58,15 @@ libraries(FILE *out)
 }
 
 void
-gen(struct token *tokens, int len, FILE *out)
+gen(struct token *tokens, int len, bool preamble, FILE *out)
 {
 	fprintf(out, "\n/* BEGIN */\n\n");
 
-	fprintf(out, "/* BEGIN lex_gen.c */\n");
-	libraries(out);
-	fprintf(out, "/* END lex_gen.c */\n");
+	if (preamble) {
+		fprintf(out, "/* BEGIN lex_gen.c */\n");
+		gen_preamble(out);
+		fprintf(out, "/* END lex_gen.c */\n");
+	}
 	fprintf(out, "\n");
 
 	/* generate tokens */
