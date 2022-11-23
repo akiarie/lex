@@ -280,12 +280,12 @@ lists()
 		list = fsmlist_append(list, dynamic_name(patterns[i].name), s);
 	}
 	struct matchcase cases[] = {
-		{"-",	&(struct findresult){NULL,	1} },
-		{"a",	&(struct findresult){"letter",	1} },
-		{"b",	&(struct findresult){"letter",	1} },
-		{"ab",	&(struct findresult){"vword",	2} },
-		{"ba",	&(struct findresult){"cword",	2} },
-		{"ba-",	&(struct findresult){"cword",	2} },
+		{"-",		&(struct findresult){NULL,	1} },
+		{"a",		&(struct findresult){"letter",	1} },
+		{"b",		&(struct findresult){"letter",	1} },
+		{"artistic",	&(struct findresult){"vword",	8} },
+		{"boring",	&(struct findresult){"cword",	6} },
+		{"ba-",		&(struct findresult){"cword",	2} },
 	};
 	run_matchcases(cases, LEN(cases), list);
 	fsmlist_destroy(list);
