@@ -223,11 +223,22 @@ fsm_copy(struct fsm *s)
 
 /* fsmlist */
 
+static char *
+dynamic_name(char *static_name)
+{
+	assert(static_name != NULL);
+	int len = strlen(static_name) + 1;
+	char *name = (char *) malloc(sizeof(char) * len);
+	snprintf(name, len, "%s", static_name);
+	return name;
+}
+
 static struct fsmlist*
 fsmlist_create(char *name, struct fsm *s)
 {
 	struct fsmlist *l = (struct fsmlist *) calloc(1, sizeof(struct fsmlist));
-	l->name = name;
+	assert(l->next == NULL);
+	l->name = dynamic_name(name);
 	l->s = s;
 	return l;
 }
@@ -238,7 +249,6 @@ fsmlist_tail(struct fsmlist *l)
 	for (; l->next != NULL; l = l->next) {}
 	return l;
 }
-
 
 struct fsmlist *
 fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
@@ -267,16 +277,6 @@ fsmlist_destroy(struct fsmlist *l)
 	free(l);
 }
 
-static char *
-dynamic_name(char *static_name)
-{
-	assert(static_name != NULL);
-	int len = strlen(static_name) + 1;
-	char *name = (char *) malloc(sizeof(char) * len);
-	snprintf(name, len, "%s", static_name);
-	return name;
-}
-
 static struct fsmlist *
 fsmlist_copy(struct fsmlist *l)
 {
@@ -291,8 +291,8 @@ fsmlist_copy(struct fsmlist *l)
 static struct fsmlist *
 fsmlist_sim(struct fsmlist *l, char c)
 {
-	struct fsmlist *result = NULL;
 	struct fsmlist *m = fsmlist_copy(l);
+	struct fsmlist *result = NULL;
 	for (struct fsmlist *n = m; n != NULL; n = n->next) {
 		struct fsm *s = fsm_sim(n->s, c);
 		if (s != NULL) {
@@ -314,8 +314,10 @@ static struct findresult *
 findresult_create(char *fsm, int len)
 {
 	struct findresult *r = (struct findresult *)
-		malloc(sizeof(struct findresult));
-	r->fsm = dynamic_name(fsm);
+		calloc(1, sizeof(struct findresult));
+	if (fsm != NULL) {
+		r->fsm = dynamic_name(fsm);
+	}
 	r->len = len;
 	return r;
 }
@@ -323,7 +325,9 @@ findresult_create(char *fsm, int len)
 void
 findresult_destroy(struct findresult *r)
 {
-	free(r->fsm);
+	if (r->fsm != NULL) {
+		free(r->fsm);
+	}
 	free(r);
 }
 
@@ -336,17 +340,29 @@ fsmlist_findnext(struct fsmlist *l, char *input)
 		/* no match */
 		return findresult_create(NULL, 1);
 	}
+	struct fsmlist *n = fsmlist_firstacc(m);
 	if (input[1] == '\0') {
-		struct fsmlist *n = fsmlist_firstacc(m);
-		fsmlist_destroy(m);
 		if (n == NULL) {
+			fsmlist_destroy(m);
 			/* no match */
 			return findresult_create(NULL, 1);
 		}
 		char *fsm = dynamic_name(n->name);
-		fsmlist_destroy(n);
+		fsmlist_destroy(m);
 		return findresult_create(fsm, 1);
 	}
-	fprintf(stderr, "fsmlist_findnext NOT IMPLEMENTED\n");
-	exit(1);
+	struct findresult *r = fsmlist_findnext(m, input + 1);
+	if (r->fsm != NULL) {
+		r->len++;
+		fsmlist_destroy(m);
+		return r;
+	}
+	if (n == NULL) {
+		fsmlist_destroy(m);
+		/* no match */
+		return findresult_create(NULL, 1);
+	}
+	char *fsm = dynamic_name(n->name);
+	fsmlist_destroy(m);
+	return findresult_create(fsm, 1);
 }

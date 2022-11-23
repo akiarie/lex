@@ -184,12 +184,25 @@ struct matchcase {
 	struct findresult *r;
 };
 
+static bool
+equal(char *s, char *t)
+{
+	if (s == NULL || t == NULL) {
+		return s == t;
+	}
+	return !strcmp(s, t);
+}
+
 bool
 runmatchcase(struct fsmlist *l, struct matchcase *cs)
 {
 	struct findresult *r = fsmlist_findnext(l, cs->input);
 	/* value equality */
-	bool eq = (r->fsm == cs->r->fsm && r->len == cs->r->len);
+	bool eq = (r->len == cs->r->len && equal(r->fsm, cs->r->fsm));
+	if (!eq) {
+		printf("got {'%s', %d} for {'%s', %d} on input '%s'\n",
+			r->fsm, r->len, cs->r->fsm, cs->r->len, cs->input);
+	}
 	findresult_destroy(r);
 	return eq;
 }
@@ -272,6 +285,7 @@ lists()
 		{"b",	&(struct findresult){"letter",	1} },
 		{"ab",	&(struct findresult){"vword",	2} },
 		{"ba",	&(struct findresult){"cword",	2} },
+		{"ba-",	&(struct findresult){"cword",	2} },
 	};
 	run_matchcases(cases, LEN(cases), list);
 	fsmlist_destroy(list);
