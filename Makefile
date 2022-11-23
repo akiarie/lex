@@ -7,20 +7,17 @@ lex: $(OBJECTS)
 thompson.o: thompson.c thompson.h
 	$(CC) -c thompson.c
 
-automata.o: automata.c automata_fsm.c automata_util.c automata.h thompson.h
+AUTOMATA_SRC = automata.c automata_fsm.c automata_util.c
+
+automata.o: automata.h $(AUTOMATA_SRC) thompson.h
 	$(CC) -c automata.c
 
 # avails the automata library so that util can generate code that refers to it
-lex_gen.c: automata.h automata.c automata_util.c automata_fsm.c lex.h lex.c
-	@cat automata.h automata_util.c automata_fsm.c automata.c lex.h lex.c \
-		| grep -v '#include "automata.h"' - \
-		| grep -v '#include "automata_fsm.c"' - \
-		| grep -v '#include "automata_util.c"' - \
-		| grep -v '#include "lex.h"' - \
-		| xxd -name lex_gen_file -i - > $@
+lex_gen.c: automata.h $(AUTOMATA_SRC) lex.h lex.c
+	@./gen-preamble.sh > $@
 
 gen.o: gen.c lex_gen.c gen.h lex.h
-	$(CC) -c gen.c lex_gen.c
+	$(CC) -c gen.c
 
 main.o: main.c gen.h thompson.h
 	$(CC) -c main.c
