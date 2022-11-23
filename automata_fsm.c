@@ -303,6 +303,13 @@ fsmlist_sim(struct fsmlist *l, char c)
 	return result;
 }
 
+static struct fsmlist *
+fsmlist_firstacc(struct fsmlist *l)
+{
+	for (; l != NULL && !l->s->accepting; l = l->next) {}
+	return l;
+}
+
 static struct findresult *
 findresult_create(char *fsm, int len)
 {
@@ -325,6 +332,21 @@ fsmlist_findnext(struct fsmlist *l, char *input)
 {
 	assert(l != NULL && input != '\0');
 	struct fsmlist *m = fsmlist_sim(l, input[0]);
+	if (m == NULL) {
+		/* no match */
+		return findresult_create(NULL, 1);
+	}
+	if (input[1] == '\0') {
+		struct fsmlist *n = fsmlist_firstacc(m);
+		fsmlist_destroy(m);
+		if (n == NULL) {
+			/* no match */
+			return findresult_create(NULL, 1);
+		}
+		char *fsm = dynamic_name(n->name);
+		fsmlist_destroy(n);
+		return findresult_create(fsm, 1);
+	}
 	fprintf(stderr, "fsmlist_findnext NOT IMPLEMENTED\n");
 	exit(1);
 }
