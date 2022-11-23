@@ -130,14 +130,6 @@ fsm_addedge(struct fsm *s, struct edge *e)
 }
 
 static struct fsmset *
-fsmset_singleton(struct fsm *s)
-{
-	struct fsmset *l = fsmset_create();
-	fsmset_add(l, s);
-	return l;
-}
-
-static struct fsmset *
 fsm_move_act(struct fsm *, char, struct circuitbreaker *);
 
 static struct fsmset *
@@ -171,6 +163,14 @@ fsm_move(struct fsm *s, char c)
 	struct circuitbreaker *tr = circuitbreaker_create(s);
 	struct fsmset *l = fsm_move_act(s, c, tr);
 	circuitbreaker_destroy(tr);
+	return l;
+}
+
+static struct fsmset *
+fsmset_singleton(struct fsm *s)
+{
+	struct fsmset *l = fsmset_create();
+	fsmset_add(l, s);
 	return l;
 }
 
@@ -222,6 +222,8 @@ fsmlist_destroy(struct fsmlist *l)
 	if (l->name != NULL) {
 		free(l->name);
 	}
+	assert(l->s != NULL);
+	fsm_destroy(l->s);
 	free(l);
 }
 

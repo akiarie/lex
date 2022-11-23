@@ -174,9 +174,6 @@ piglatin()
 		{true,  "hasdfaue"},
 	};
 	run_cases(ccases, LEN(ccases), cword);
-	for (m = list; m != NULL; m = m->next) {
-		fsm_destroy(m->s);
-	}
 	fsmlist_destroy(list);
 }
 
@@ -190,6 +187,12 @@ lists()
 		{"vword",	"{vowel}{letter}*"},
 		{"cword",	"{cons}{letter}*"},
 	};
+	struct fsmlist *list = NULL;
+	for (int i = 0; i < LEN(patterns); i++) {
+		struct fsm *s = lex_fsm_fromstring(patterns[i].regex, list);
+		list = fsmlist_append(list, dynamic_name(patterns[i].name), s);
+	}
+	fsmlist_destroy(list);
 }
 
 typedef void (*test)(void);
@@ -206,4 +209,5 @@ main()
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();
 	}
+
 }
