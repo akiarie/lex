@@ -303,11 +303,15 @@ fsmlist_sim(struct fsmlist *l, char c)
 	return result;
 }
 
-static struct fsmlist *
+static char *
 fsmlist_firstacc(struct fsmlist *l)
 {
-	for (; l != NULL && !l->s->accepting; l = l->next) {}
-	return l;
+	for (; l != NULL; l = l->next) {
+		if (l->s->accepting) {
+			return dynamic_name(l->name);
+		}
+	}
+	return NULL;
 }
 
 static struct findresult *
@@ -334,35 +338,18 @@ findresult_destroy(struct findresult *r)
 struct findresult *
 fsmlist_findnext(struct fsmlist *l, char *input)
 {
-	assert(l != NULL && input != '\0');
-	struct fsmlist *m = fsmlist_sim(l, input[0]);
-	if (m == NULL) {
-		/* no match */
-		return findresult_create(NULL, 1);
+	if (l == NULL || *input == '\0') {
+		return findresult_create(NULL, 0);
 	}
-	struct fsmlist *n = fsmlist_firstacc(m);
-	if (input[1] == '\0') {
-		if (n == NULL) {
-			fsmlist_destroy(m);
-			/* no match */
-			return findresult_create(NULL, 1);
-		}
-		char *fsm = dynamic_name(n->name);
-		fsmlist_destroy(m);
-		return findresult_create(fsm, 1);
-	}
-	struct findresult *r = fsmlist_findnext(m, input + 1);
+	struct fsmlist *m = fsmlist_sim(l, *input++); /* increment for below */
+	struct findresult *r = fsmlist_findnext(m, input);
 	if (r->fsm != NULL) {
-		r->len++;
+		assert(m != NULL);
 		fsmlist_destroy(m);
+		r->len++;
 		return r;
 	}
-	if (n == NULL) {
-		fsmlist_destroy(m);
-		/* no match */
-		return findresult_create(NULL, 1);
-	}
-	char *fsm = dynamic_name(n->name);
+	char *fsm = fsmlist_firstacc(m);
 	fsmlist_destroy(m);
 	return findresult_create(fsm, 1);
 }
