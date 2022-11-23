@@ -343,13 +343,11 @@ fsmlist_findnext(struct fsmlist *l, char *input)
 	}
 	struct fsmlist *m = fsmlist_sim(l, *input++); /* increment for below */
 	struct findresult *r = fsmlist_findnext(m, input);
+	char *fsm = fsmlist_firstacc(m);
+	fsmlist_destroy(m);
 	if (r->fsm != NULL) {
-		assert(m != NULL);
-		fsmlist_destroy(m);
 		r->len++;
 		return r;
 	}
-	char *fsm = fsmlist_firstacc(m);
-	fsmlist_destroy(m);
 	return findresult_create(fsm, 1);
 }
