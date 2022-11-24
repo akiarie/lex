@@ -23,7 +23,7 @@ int
 main()
 {
 	test tests[] = {
-		/*run,*/
+		run,
 	};
 	for (int i = 0, len = LEN(tests); i < len; i++) {
 		tests[i]();

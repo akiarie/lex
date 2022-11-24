@@ -80,28 +80,81 @@ dynamic_name(char *static_name)
 	return name;
 }
 
-static struct lexer *
-lexer_create_act(struct fsmlist *l)
+struct pattern *
+pattern_create(char *name, bool literal)
 {
-	assert(l != NULL);
-	struct lexer *lx = (struct lexer *) calloc(1, sizeof(struct lexer));
-	return lx;
+	struct pattern *p = (struct pattern *) malloc(sizeof(struct pattern));
+	p->name = dynamic_name(name);
+	p->literal = literal;
+	return p;
+}
+
+static void
+pattern_destroy(struct pattern *p)
+{
+	free(p->name);
+	free(p);
+}
+
+static struct patternlist *
+patternlist_create(struct pattern *p, char *action)
+{
+	struct patternlist *pl = (struct patternlist *)
+		calloc(1, sizeof(struct patternlist));
+	pl->p = p;
+	pl->action = dynamic_name(action);
+	return pl;
+}
+
+static struct patternlist *
+patternlist_tail(struct patternlist *pl)
+{
+	for (; pl->next != NULL; pl = pl->next) {}
+	return pl;
+}
+
+struct patternlist *
+patternlist_append(struct patternlist *pl, struct pattern *p, char *action)
+{
+	struct patternlist *m = patternlist_create(p, action);
+	if (pl == NULL) {
+		return m;
+	}
+	patternlist_tail(pl)->next = m;
+	return pl;
+}
+
+static void
+patternlist_destroy(struct patternlist *pl)
+{
+	if (pl == NULL) {
+		return;
+	}
+	if (pl->next != NULL) {
+		patternlist_destroy(pl->next);
+	}
+	pattern_destroy(pl->p);
+	free(pl->action);
+	free(pl);
 }
 
 struct lexer *
-lexer_create(struct token *tokens, int len)
+lexer_create(char *pre, char *post, struct patternlist *pl, struct fsmlist *tkl)
 {
-	struct fsmlist *l = NULL;
-	for (int i = 0; i < len; i++) {
-		struct fsm *s = lex_fsm_fromstring(tokens[i].regex, l);
-		l = fsmlist_append(l, dynamic_name(tokens[i].tag), s);
-	}
-	return lexer_create_act(l);
+	struct lexer *lx = (struct lexer *) malloc(sizeof(struct lexer));
+	lx->pre = pre;
+	lx->post = post;
+	lx->pl = pl;
+	lx->tkl = tkl;
+	return lx;
 }
 
 void
 lexer_destroy(struct lexer *lx)
 {
 	assert(lx != NULL);
+	free(lx->pre);
+	free(lx->post);
+	fsmlist_destroy(lx->tkl);
 	free(lx);
 }

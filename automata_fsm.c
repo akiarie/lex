@@ -335,6 +335,18 @@ findresult_destroy(struct findresult *r)
 	free(r);
 }
 
+static struct findresult *
+fsmlist_findnext_choose(struct fsmlist *m, char *input)
+{
+	struct findresult *r = fsmlist_findnext(m, input);
+	if (r->fsm != NULL) {
+		r->len++;
+		return r;
+	}
+	char *fsm = fsmlist_firstacc(m);
+	return findresult_create(fsm, 1);
+}
+
 struct findresult *
 fsmlist_findnext(struct fsmlist *l, char *input)
 {
@@ -342,12 +354,7 @@ fsmlist_findnext(struct fsmlist *l, char *input)
 		return findresult_create(NULL, 0);
 	}
 	struct fsmlist *m = fsmlist_sim(l, *input++); /* increment for below */
-	struct findresult *r = fsmlist_findnext(m, input);
-	char *fsm = fsmlist_firstacc(m);
+	struct findresult *r = fsmlist_findnext_choose(m, input);
 	fsmlist_destroy(m);
-	if (r->fsm != NULL) {
-		r->len++;
-		return r;
-	}
-	return findresult_create(fsm, 1);
+	return r;
 }
