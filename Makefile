@@ -16,30 +16,23 @@ parse.o: parse.h automata.h
 	$(CC) -c parse.c
 
 # avails the automata library so that util can generate code that refers to it
-lex_gen.c: automata.h $(AUTOMATA_SRC) lex.h lex.c
+lex_gen.c: automata.h $(AUTOMATA_SRC)
 	@./gen-preamble.sh > $@
 
-gen.o: gen.c lex_gen.c gen.h lex.h
+gen.o: gen.c lex_gen.c gen.h
 	$(CC) -c gen.c
 
 main.o: main.c gen.h thompson.h
 	$(CC) -c main.c
 
-## only used by tests
-lex.o: lex.c automata.h thompson.h parse.h
-	$(CC) -c lex.c
-
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
-automata_test: automata_test.c lex.o automata.o thompson.o
-	$(CC) -o $@ automata_test.c lex.o automata.o thompson.o
+automata_test: automata_test.c automata.o thompson.o
+	$(CC) -o $@ automata_test.c automata.o thompson.o
 
 gen_test: gen_test.c lex_gen.c gen.o
 	$(CC) -o $@ gen_test.c gen.o
-
-lex_test: lex_test.c lex.o automata.o thompson.o parse.o
-	$(CC) -o $@ $^
 
 example: lex
 	@cd examples; ../lex lex.l

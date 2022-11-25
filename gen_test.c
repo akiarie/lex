@@ -3,7 +3,6 @@
 #include<strings.h>
 
 #include "parse.h"
-#include "lex.h"
 #include "gen.h"
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
@@ -15,7 +14,7 @@ run()
 		{"vowel", "[aeiou]"},
 		{"vowelb", "{vowel}b"},
 	};
-	gen(tokens, 2, true, stdout);
+	/*gen(tokens, 2, true, stdout);*/
 }
 
 typedef void (*test)(void);

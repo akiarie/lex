@@ -5,7 +5,7 @@
 #include<string.h>
 
 #include "parse.h"
-#include "lex.h"
+#include "gen.h"
 #include "lex_gen.c"
 
 static int
@@ -51,7 +51,7 @@ gen_fsmlist_destroy(FILE *out)
 }
 
 static void
-gen_preamble(FILE *out)
+gen_imports(FILE *out)
 {
 	for (int i = 0; i < lex_gen_file_len; i++) {
 		putchar(lex_gen_file[i]);
@@ -59,27 +59,27 @@ gen_preamble(FILE *out)
 }
 
 void
-gen(struct token *tokens, int len, bool preamble, FILE *out)
+gen(struct lexer *lx, bool imports, FILE *out)
 {
 	fprintf(out, "\n/* BEGIN */\n\n");
 
-	if (preamble) {
+	if (imports) {
 		fprintf(out, "/* BEGIN lex_gen.c */\n");
-		gen_preamble(out);
+		gen_imports(out);
 		fprintf(out, "/* END lex_gen.c */\n");
 	}
 	fprintf(out, "\n");
 
 	/* generate tokens */
 	fprintf(out, "struct token tokens[] = {\n");
-	for (struct token *t = tokens; t < tokens + len; t++) {
+	for (struct token *t = lx->tokens; t < lx->tokens + lx->ntokens; t++) {
 		/*fprintf(out, "\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);*/
 	}
 	fprintf(out, "};\n");
 
 	/* generate fsmlist based on tokens */
-	fprintf(out, "struct fsmlist *%s = lexer_create(tokens, %d);\n",
-		LEX_AUTOMATON, len);
+	fprintf(out, "struct fsmlist *%s = lexer_create(tokens, %lu);\n",
+		LEX_AUTOMATON, lx->ntokens);
 
 	fprintf(out, "\n");
 

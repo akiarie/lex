@@ -3,6 +3,6 @@
 #include<stdbool.h>
 
 void
-gen(struct token *tokens, int len, bool preamble, FILE *out);
+gen(struct lexer *, bool imports, FILE *);
 
 #endif

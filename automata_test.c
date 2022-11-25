@@ -4,7 +4,6 @@
 #include<assert.h>
 
 #include "automata.h"
-#include "lex.h"
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -43,7 +42,7 @@ void run_cases(struct fsmcase cases[], int len, struct fsm *s)
 void
 simple_expressions()
 {
-	struct fsm *s = lex_fsm_fromstring("ab", NULL);
+	struct fsm *s = fsm_fromstring("ab", NULL);
 	struct fsmcase cases[] = {
 		{false,	""},
 		{false,	"a"},
@@ -54,7 +53,7 @@ simple_expressions()
 	run_cases(cases, LEN(cases), s);
 	fsm_destroy(s);
 
-	s = lex_fsm_fromstring("a|b|cd", NULL);
+	s = fsm_fromstring("a|b|cd", NULL);
 	struct fsmcase cases2[] = {
 		{false,	""},
 		{true,	"a"},
@@ -68,7 +67,7 @@ simple_expressions()
 	run_cases(cases2, LEN(cases2), s);
 	fsm_destroy(s);
 
-	s = lex_fsm_fromstring("a?b?", NULL);
+	s = fsm_fromstring("a?b?", NULL);
 	struct fsmcase cases3[] = {
 		{true,	""},
 		{true,	"a"},
@@ -79,7 +78,7 @@ simple_expressions()
 	run_cases(cases3, LEN(cases3), s);
 	fsm_destroy(s);
 
-	s = lex_fsm_fromstring("a*b", NULL);
+	s = fsm_fromstring("a*b", NULL);
 	struct fsmcase cases4[] = {
 		{false,	""},
 		{false,	"a"},
@@ -94,7 +93,7 @@ simple_expressions()
 	run_cases(cases4, LEN(cases4), s);
 	fsm_destroy(s);
 
-	s = lex_fsm_fromstring("a[bc0-3]*d", NULL);
+	s = fsm_fromstring("a[bc0-3]*d", NULL);
 	struct fsmcase cases5[] = {
 		{false,	""},
 		{false,	"a"},
@@ -114,7 +113,7 @@ simple_expressions()
 void
 second_tier()
 {
-	struct fsm *s = lex_fsm_fromstring("a[bcg-z0-3]*d", NULL);
+	struct fsm *s = fsm_fromstring("a[bcg-z0-3]*d", NULL);
 	struct fsmcase cases[] = {
 		{false, "hello, world!"},
 		{true,  "ad"},
@@ -152,7 +151,7 @@ piglatin()
 	};
 	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = lex_fsm_fromstring(patterns[i].regex, list);
+		struct fsm *s = fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, dynamic_name(patterns[i].name), s);
 	}
 	assert(list != NULL);
@@ -276,7 +275,7 @@ lists()
 	};
 	struct fsmlist *list = NULL;
 	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = lex_fsm_fromstring(patterns[i].regex, list);
+		struct fsm *s = fsm_fromstring(patterns[i].regex, list);
 		list = fsmlist_append(list, dynamic_name(patterns[i].name), s);
 	}
 	struct matchcase cases[] = {

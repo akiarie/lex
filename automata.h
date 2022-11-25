@@ -26,6 +26,11 @@ struct fsm {
 struct fsm *
 fsm_create(bool accepting);
 
+struct fsmlist;
+
+struct fsm *
+fsm_fromstring(char *regex, struct fsmlist *);
+
 void
 fsm_destroy(struct fsm *);
 
