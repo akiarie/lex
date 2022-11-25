@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<strings.h>
 
+#include "parse.h"
 #include "lex.h"
 #include "gen.h"
 

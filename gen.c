@@ -4,6 +4,7 @@
 #include<assert.h>
 #include<string.h>
 
+#include "parse.h"
 #include "lex.h"
 #include "lex_gen.c"
 
@@ -72,7 +73,7 @@ gen(struct token *tokens, int len, bool preamble, FILE *out)
 	/* generate tokens */
 	fprintf(out, "struct token tokens[] = {\n");
 	for (struct token *t = tokens; t < tokens + len; t++) {
-		fprintf(out, "\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);
+		/*fprintf(out, "\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);*/
 	}
 	fprintf(out, "};\n");
 

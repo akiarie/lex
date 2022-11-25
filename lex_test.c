@@ -18,49 +18,32 @@ dynamic_name(char *static_name)
 	return name;
 }
 
-struct fsmlist *
-gettokenlist(struct token *tokens, int len)
-{
-	struct fsmlist *l = NULL;
-	for (int i = 0; i < len; i++) {
-		struct token tk = tokens[i];
-		struct fsm *s = lex_fsm_fromstring(tk.expr, l);
-		l = fsmlist_append(l, tk.tag, s);
-	}
-	return l;
-}
+/*struct fsmlist **/
+/*gettokenlist(struct token *tokens, int len)*/
+/*{*/
+	/*struct fsmlist *l = NULL;*/
+	/*for (int i = 0; i < len; i++) {*/
+		/*struct token tk = tokens[i];*/
+		/*struct fsm *s = lex_fsm_fromstring(tk.expr, l);*/
+		/*l = fsmlist_append(l, tk.tag, s);*/
+	/*}*/
+	/*return l;*/
+/*}*/
 
-struct patternlist *
-getpatternlist(struct pattern *patterns, int len)
-{
-	struct patternlist *pl = NULL;
-	for (int i = 0; i < len; i++) {
-	}
-	return pl;
-}
+/*struct patternlist **/
+/*getpatternlist(struct pattern *patterns, int len)*/
+/*{*/
+	/*struct patternlist *pl = NULL;*/
+	/*for (int i = 0; i < len; i++) {*/
+	/*}*/
+	/*return pl;*/
+/*}*/
 
 void
 run()
 {
 	char *pre = dynamic_name("/* preamble */");
 	char *post = dynamic_name("/* postamble */");
-	struct token tokens[] = {
-		{"ws",		"[ ]"},
-		{"vowel",	"[aeiou]"},
-		{"vowelb",	"{vowel}b"},
-	};
-	struct pattern patterns[] = {
-		{"{ws}",	"{ /* action for {ws} */ }"},
-		{"ab",		"{ /* action for ab */ }"},
-		{"{vowelb}",	"{ /* action for {vowelb} */ }"},
-	};
-	struct lexer *lx = lexer_create(
-		pre,
-		post,
-		getpatternlist(patterns, LEN(patterns)),
-		gettokenlist(tokens, LEN(tokens))
-	);
-	lexer_destroy(lx);
 }
 
 typedef void (*test)(void);
