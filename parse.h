@@ -3,9 +3,7 @@
 
 struct fsmlist;
 
-struct token {
-	char *name, *action;
-};
+struct token { char *name, *action; };
 
 struct lexfile {
 	char *pre, *post;
