@@ -32,7 +32,7 @@ run()
 	struct lexer *lx = lexer_create(dynamic_name("/* preamble */"),
 		dynamic_name("/* postamble */"), patterns, LEN(patterns),
 		tokens, LEN(tokens));
-	gen(lx, true, stdout);
+	gen(stdout, lx, true);
 	lexer_destroy(lx);
 }
 

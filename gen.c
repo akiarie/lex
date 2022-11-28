@@ -31,7 +31,7 @@ yyin(FILE *out)
 }
 
 static void
-yyfsmlistprep(struct pattern *p, size_t len, FILE *out)
+yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
 {
 	fprintf(out,
 "struct pattern *yyfsmlist = NULL;\n"
@@ -67,7 +67,8 @@ tokens_hasname(struct token *tokens, size_t len, char *name)
 
 /* confirmintegrity: confirms every fsm in l has a matching token in tokens */
 static void
-confirmintegrity(struct pattern *patterns, size_t npat, struct token *tokens, size_t ntok)
+confirmintegrity(struct pattern *patterns, size_t npat, struct token *tokens,
+		size_t ntok)
 {
 	for (int i = 0; i < npat; i++) {
 		char *name = patterns[i].name;
@@ -79,16 +80,16 @@ confirmintegrity(struct pattern *patterns, size_t npat, struct token *tokens, si
 }
 
 static void
-yylex(struct pattern *patterns, size_t npat, struct token *tokens, size_t ntok,
-		FILE *out)
+yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
+		size_t ntok)
 {
 	confirmintegrity(patterns, npat, tokens, ntok);
 	yyin(out);
-	yyfsmlistprep(patterns, npat, out);
+	yyfsmlistprep(out, patterns, npat);
 }
 
 void
-gen(struct lexer *lx, bool imports, FILE *out)
+gen(FILE *out, struct lexer *lx, bool imports)
 {
 	fprintf(out, "\n/* BEGIN */\n\n");
 
@@ -105,7 +106,7 @@ gen(struct lexer *lx, bool imports, FILE *out)
 
 	/* lexer proper */
 	fprintf(out, "/* BEGIN lexer */\n");
-	yylex(lx->patterns, lx->npat, lx->tokens, lx->ntok, out);
+	yylex(out, lx->patterns, lx->npat, lx->tokens, lx->ntok);
 	fprintf(out, "/* END lexer */\n");
 
 
