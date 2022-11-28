@@ -1,8 +1,8 @@
 CC = cc -g
-OBJECTS = main.o gen.o thompson.o automata.o parse.o
+OBJECTS = gen.o thompson.o automata.o parse.o
 
 lex: $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS)
+	$(CC) -o $@ main.o $(OBJECTS)
 
 thompson.o: thompson.c thompson.h
 	$(CC) -c thompson.c
@@ -22,22 +22,22 @@ lex_gen.c: automata.h $(AUTOMATA_SRC)
 gen.o: gen.c lex_gen.c gen.h
 	$(CC) -c gen.c
 
-main.o: main.c gen.h thompson.h
+main.o: main.c $(OBJECTS)
 	$(CC) -c main.c
 
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
 automata_test: automata_test.c automata.o thompson.o
-	$(CC) -o $@ automata_test.c automata.o thompson.o
+	$(CC) -o $@ automata_test.c $(OBJECTS)
 
-gen_test: gen_test.c lex_gen.c gen.o
-	$(CC) -o $@ gen_test.c gen.o
+gen_test: gen_test.c lex_gen.c gen.o automata.o parse.o
+	$(CC) -o $@ gen_test.c $(OBJECTS)
 
 example: lex
 	@cd examples; ../lex lex.l
 
-check: thompson_test automata_test gen_test lex_test
+check: thompson_test automata_test gen_test
 	@./run-tests.sh
 
 clean-tests: 

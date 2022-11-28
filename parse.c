@@ -15,3 +15,12 @@ lexer_create(char *pre, char *post, struct fsmlist *l, struct token *tokens,
 	lx->ntokens = ntokens;
 	return lx;
 }
+
+void
+lexer_destroy(struct lexer *lx)
+{
+	free(lx->pre);
+	free(lx->post);
+	fsmlist_destroy(lx->definitions);
+	free(lx);
+}
