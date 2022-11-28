@@ -3,6 +3,9 @@
 int
 yylex()
 {
-	struct findresult *r = fsmlist_findnext(l, yyin);
+	if (NULL == yyfsmlist) {
+		yyfsmlistprep();
+	}
+	struct findresult *r = fsmlist_findnext(yyfsmlist, yyin);
 	return YY_EOF;
 }

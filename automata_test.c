@@ -199,7 +199,7 @@ runmatchcase(struct fsmlist *l, struct matchcase *cs)
 	/* value equality */
 	bool eq = (r->len == cs->r->len && equal(r->fsm, cs->r->fsm));
 	if (!eq) {
-		printf("got {'%s', %d} for {'%s', %d} on input '%s'\n",
+		printf("got {'%s', %lu} for {'%s', %lu} on input '%s'\n",
 			r->fsm, r->len, cs->r->fsm, cs->r->len, cs->input);
 	}
 	findresult_destroy(r);
@@ -234,7 +234,7 @@ pretty_findresult(struct findresult *r)
 	char *sep = ", ";
 	int len = strlen(fsm) + strlen(sep) + ndigits(r->len) + 2 + 1; /* { } */
 	char *s = (char *) malloc(sizeof(char) * len);
-	snprintf(s, len, "{%s%s%d}", fsm, sep, r->len);
+	snprintf(s, len, "{%s%s%lu}", fsm, sep, r->len);
 	return s;
 }
 

@@ -25,9 +25,9 @@ run()
 		{"vowelb", "{vowel}b"},
 	};
 	struct token tokens[] = {
-		{true,	"ab",		"{ /* action for ab */ }"},
-		{false,	"vowelb",	"{ /* action for vowelb */ }"},
-		{false,	"vowel",	"{ /* action for vowel */ }"},
+		{true,	"ab",		"/* action for ab */"},
+		{false,	"vowelb",	"/* action for vowelb */"},
+		{false,	"vowel",	"/* action for vowel */"},
 	};
 	struct lexer *lx = lexer_create(dynamic_name("/* preamble */"),
 		dynamic_name("/* postamble */"), patterns, LEN(patterns),

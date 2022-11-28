@@ -64,7 +64,7 @@ fsmlist_append(struct fsmlist *, char *, struct fsm *);
 
 struct findresult {
 	char *fsm;
-	int len;
+	unsigned long len;
 };
 
 void

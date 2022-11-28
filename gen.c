@@ -21,12 +21,14 @@ void
 yyin(FILE *out)
 {
 	fprintf(out,
-"char *yyin;\n"
+"char *yyin = NULL;\n"
 "\n"
 "void\n"
 "yy_scan_string(char *s)\n"
 "{\n"
-"	yyin = s;\n"
+"	int len = strlen(s) + 1;\n"
+"	yyin = (char *) malloc(sizeof(char) * len);\n"
+"	snprintf(yyin, len, \"%%s\", s);\n"
 "}\n");
 }
 
@@ -35,9 +37,12 @@ yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
 {
 	fprintf(out,
 "struct pattern *yyfsmlist = NULL;\n"
+"unsigned long *yyleng = 0;\n"
+"char *yytext = NULL;\n"
 "\n"
 "static void\n"
-"yyfsmlistprep() {\n");
+"yyfsmlistprep()\n"
+"{\n");
 	fprintf(out,
 "	struct pattern p[] = {\n");
 	for (int i = 0; i < len; i++) {
@@ -85,7 +90,41 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 {
 	confirmintegrity(patterns, npat, tokens, ntok);
 	yyin(out);
+	fprintf(out, "\n");
 	yyfsmlistprep(out, patterns, npat);
+	fprintf(out,
+"\n"
+"int\n"
+"yylex()\n"
+"{\n");
+	fprintf(out,
+"	if (NULL == yyfsmlist) {\n"
+"		yyfsmlistprep();\n"
+"	}\n"
+"	struct findresult *r = fsmlist_findnext(yyfsmlist, yyin);\n"
+"	yyleng = r->len; yytext = yyin;\n"
+"	if (yyleng == 0) {\n"
+"		assert(yyin == '\\0');\n"
+"		return 0;\n"
+"	}\n"
+"	/* ⊢ yyleng > 0 */\n");
+	for (int i = 0; i < ntok; i++) {
+		char *els = i == 0 ? "" : "} else ";
+		struct token tk = tokens[i];
+		fprintf(out,
+"	%sif (strcmp(r->fsm, \"%s\") == 0) {\n"
+"		%s\n", els, tk.name, tk.action);
+	}
+	fprintf(out,
+"	}\n"
+"	/* recurse if no action on match */"
+"	if (r->fsm != NULL) {\n"
+"		return yylex();\n"
+"	}\n"
+"	/* otherwise there must be an error */\n"
+"	fprintf(stderr, \"unmatched sequence '%%.*s'\", (int) yyleng, yytext);\n"
+"	exit(1);\n"
+"}\n");
 }
 
 void
