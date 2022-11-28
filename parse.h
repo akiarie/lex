@@ -12,7 +12,11 @@ struct lexer {
 	size_t ntokens;
 };
 
+/* lexer_create: returns a lexer. takes ownership of pre, post and l. */
 struct lexer *
-lexer_create(char *, char *, struct fsmlist *, struct token *, size_t);
+lexer_create(char *pre, char *post, struct fsmlist *l, struct token *, size_t);
+
+void
+lexer_destroy(struct lexer *);
 
 #endif
