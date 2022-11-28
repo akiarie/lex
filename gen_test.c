@@ -8,27 +8,32 @@
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
+static char *
+dynamic_name(char *static_name)
+{
+	int len = strlen(static_name) + 1;
+	char *name = (char *) malloc(sizeof(char) * len);
+	snprintf(name, len, "%s", static_name);
+	return name;
+}
+
 void
 run()
 {
-	struct { char *name; char *regex; } patterns[] = {
+	struct pattern patterns[] = {
 		{"vowel", "[aeiou]"},
 		{"vowelb", "{vowel}b"},
 	};
-	struct fsmlist *l = NULL;
-	for (int i = 0; i < LEN(patterns); i++) {
-		struct fsm *s = fsm_fromstring(patterns[i].regex, l);
-		l = fsmlist_append(l, patterns[i].name, s);
-	}
 	struct token tokens[] = {
-		{"ab",		"{ /* action for ab */ }"},
-		{"{vowelb}",	"{ /* action for vowelb */ }"},
-		{"{vowel}",	"{ /* action for vowel */ }"},
+		{true,	"ab",		"{ /* action for ab */ }"},
+		{false,	"vowelb",	"{ /* action for vowelb */ }"},
+		{false,	"vowel",	"{ /* action for vowel */ }"},
 	};
-	struct lexer *lx = lexer_create("/* preamble */", "/* postamble */", l,
+	struct lexer *lx = lexer_create(dynamic_name("/* preamble */"),
+		dynamic_name("/* postamble */"), patterns, LEN(patterns),
 		tokens, LEN(tokens));
-	/*lexer_destroy(lx);*/
-	/*gen(tokens, 2, true, stdout);*/
+	gen(lx, true, stdout);
+	lexer_destroy(lx);
 }
 
 typedef void (*test)(void);

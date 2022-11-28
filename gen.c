@@ -4,51 +4,10 @@
 #include<assert.h>
 #include<string.h>
 
+#include "automata.h"
 #include "parse.h"
 #include "gen.h"
 #include "lex_gen.c"
-
-static int
-numlen(int num)
-{
-	assert(num >= 0);
-	int len = 1;
-	for (int k = num; k >= 10; k /= 10) {
-		len++;
-	}
-	return len;
-}
-
-#define LEX_AUTOMATON "lex_automaton"
-#define LEX_FSMLIST "ln_fsmlist"
-
-static void
-gen_driver(FILE *out)
-{
-	fprintf(out, "/* driver code based on %s */\n", LEX_AUTOMATON);
-}
-
-static char *
-name(char *type, int num)
-{
-	int len = strlen(type) + numlen(num) + 1;
-	char *name = (char *) malloc(sizeof(char) * len);
-	snprintf(name, len, "%s%d", type, num);
-	return name;
-}
-
-static void
-gen_fsmlist_destroy(FILE *out)
-{
-	char *lname = name(LEX_FSMLIST, 0);
-	fprintf(out,
-		"for (struct fsmlist *%s = %s; %s != NULL; %s = %s->next) {\n",
-		lname, LEX_AUTOMATON, lname, lname, lname);
-	fprintf(out, "\tfsm_destroy(%s->s);\n", lname);
-	fprintf(out, "}\n");
-	free(lname);
-	fprintf(out, "fsmlist_destroy(%s);\n", lname);
-}
 
 static void
 gen_imports(FILE *out)
@@ -56,6 +15,76 @@ gen_imports(FILE *out)
 	for (int i = 0; i < lex_gen_file_len; i++) {
 		putchar(lex_gen_file[i]);
 	}
+}
+
+void
+yyin(FILE *out)
+{
+	fprintf(out,
+"char *yyin;\n"
+"\n"
+"void\n"
+"yy_scan_string(char *s)\n"
+"{\n"
+"	yyin = s;\n"
+"}\n");
+}
+
+static void
+yyfsmlistprep(struct pattern *p, size_t len, FILE *out)
+{
+	fprintf(out,
+"struct pattern *yyfsmlist = NULL;\n"
+"\n"
+"static void\n"
+"yyfsmlistprep() {\n");
+	fprintf(out,
+"	struct pattern p[] = {\n");
+	for (int i = 0; i < len; i++) {
+		fprintf(out,
+"		{\"%s\",	\"%s\"},\n", p[i].name, p[i].pattern);
+	}
+	fprintf(out,
+"	};\n"
+"	for (int i = 0; i < %lu; i++) {\n", len);
+	fprintf(out,
+"		struct fsm *s = fsm_fromstring(p[i].regex, yyfsmlist);\n"
+"		yyfsmlist = fsmlist_append(yyfsmlist, p[i].name, s);\n"
+"	};\n"
+"}\n");
+}
+
+static bool
+tokens_hasname(struct token *tokens, size_t len, char *name)
+{
+	for (int i = 0; i < len; i++) {
+		if (strcmp(tokens[i].name, name) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/* confirmintegrity: confirms every fsm in l has a matching token in tokens */
+static void
+confirmintegrity(struct pattern *patterns, size_t npat, struct token *tokens, size_t ntok)
+{
+	for (int i = 0; i < npat; i++) {
+		char *name = patterns[i].name;
+		if (!tokens_hasname(tokens, ntok, name)) {
+			fprintf(stderr, "'%s' not in tokens\n", name);
+			exit(1);
+		}
+	}
+}
+
+static void
+yylex(struct pattern *patterns, size_t npat, struct token *tokens, size_t ntok,
+		FILE *out)
+{
+	confirmintegrity(patterns, npat, tokens, ntok);
+	yyin(out);
+	yyfsmlistprep(patterns, npat, out);
 }
 
 void
@@ -68,28 +97,21 @@ gen(struct lexer *lx, bool imports, FILE *out)
 		gen_imports(out);
 		fprintf(out, "/* END lex_gen.c */\n");
 	}
-	fprintf(out, "\n");
 
-	/* generate tokens */
-	fprintf(out, "struct token tokens[] = {\n");
-	for (struct token *t = lx->tokens; t < lx->tokens + lx->ntokens; t++) {
-		/*fprintf(out, "\t{\"%s\",\t\"%s\"},\n", t->tag, t->regex);*/
-	}
-	fprintf(out, "};\n");
+	/* preamble */
+	fprintf(out, "/* BEGIN preamble */\n");
+	fprintf(out, "%s\n", lx->pre);
+	fprintf(out, "/* END preamble */\n");
 
-	/* generate fsmlist based on tokens */
-	fprintf(out, "struct fsmlist *%s = lexer_create(tokens, %lu);\n",
-		LEX_AUTOMATON, lx->ntokens);
+	/* lexer proper */
+	fprintf(out, "/* BEGIN lexer */\n");
+	yylex(lx->patterns, lx->npat, lx->tokens, lx->ntok, out);
+	fprintf(out, "/* END lexer */\n");
 
-	fprintf(out, "\n");
 
-	gen_driver(out);
-
-	fprintf(out, "\n");
-
-	/* destroy objects */
-	gen_fsmlist_destroy(out);
-	fprintf(out, "fsmlist_destroy(%s);\n", LEX_AUTOMATON);
+	fprintf(out, "/* BEGIN postamble */\n");
+	fprintf(out, "%s\n", lx->post);
+	fprintf(out, "/* END postamble */\n");
 
 	fprintf(out, "\n/* END */\n");
 }

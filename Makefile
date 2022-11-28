@@ -28,10 +28,10 @@ main.o: main.c $(OBJECTS)
 thompson_test: thompson_test.c thompson.o
 	$(CC) -o $@ thompson_test.c thompson.o
 
-automata_test: automata_test.c automata.o thompson.o
+automata_test: automata_test.c $(OBJECTS)
 	$(CC) -o $@ automata_test.c $(OBJECTS)
 
-gen_test: gen_test.c lex_gen.c gen.o automata.o parse.o
+gen_test: gen_test.c lex_gen.c $(OBJECTS)
 	$(CC) -o $@ gen_test.c $(OBJECTS)
 
 example: lex
