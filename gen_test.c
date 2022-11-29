@@ -8,6 +8,24 @@
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
 
+#define EXAMPLE_FILE "gen_test_gen.c"
+
+/* read_file: reads contents of file and returns them
+ * caller must free returned string
+ * see https://stackoverflow.com/a/14002993 */
+char * read_file(char *path)
+{
+    FILE *f = fopen(path, "rb");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+    char *str = malloc(fsize + 1);
+    fread(str, fsize, 1, f);
+    fclose(f);
+    str[fsize] = '\0';
+    return str;
+}
+
 static char *
 dynamic_name(char *static_name)
 {
@@ -34,7 +52,6 @@ run()
 "#include<stdio.h>\n"
 "\n"
 "void printyy();\n"
-"\n"
 "\n"),
 		dynamic_name(
 "\n"
@@ -44,9 +61,9 @@ run()
 "}\n"
 "\n"
 "/* read_file: reads contents of file and returns them\n"
-" * caller must free returned string \n"
+" * caller must free returned string\n"
 " * see https://stackoverflow.com/a/14002993 */\n"
-"char* read_file(char *path)\n"
+"char * read_file(char *path)\n"
 "{\n"
 "    FILE *f = fopen(path, \"rb\");\n"
 "    fseek(f, 0, SEEK_END);\n"
@@ -68,11 +85,23 @@ run()
 "	char *infile = read_file(argv[1]);\n"
 "	yy_scan_string(infile);\n"
 "	free(infile);\n"
-"	yylex(); \n"
+"	yylex();\n"
 "}\n"),
 		patterns, LEN(patterns), tokens, LEN(tokens));
-	gen(stdout, lx, true);
+	char *buf = NULL;
+	size_t buflen = 0;
+	FILE *stream = open_memstream(&buf, &buflen);
+	gen(stream, lx, false);
+	fclose(stream);
 	lexer_destroy(lx);
+	char *expected = read_file(EXAMPLE_FILE);
+	if (strcmp(buf, expected) != 0) {
+		fprintf(stderr, "generated file does not match expected\n");
+		printf("%s", buf);
+		exit(1);
+	}
+	free(expected);
+	free(buf);
 }
 
 typedef void (*test)(void);

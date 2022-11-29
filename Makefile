@@ -31,7 +31,7 @@ thompson_test: thompson_test.c thompson.o
 automata_test: automata_test.c $(OBJECTS)
 	$(CC) -o $@ automata_test.c $(OBJECTS)
 
-gen_test: gen_test.c lex_gen.c $(OBJECTS)
+gen_test: gen_test.c lex_gen.c gen_test_gen.c $(OBJECTS)
 	$(CC) -o $@ gen_test.c $(OBJECTS)
 
 example: lex

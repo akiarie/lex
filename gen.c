@@ -90,7 +90,8 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 {
 	confirmintegrity(patterns, npat, tokens, ntok);
 	yyin(out);
-	fprintf(out, "\n");
+	fprintf(out,
+"\n");
 	yyfsmlistprep(out, patterns, npat);
 	fprintf(out,
 "\n"
@@ -103,7 +104,7 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 "	}\n"
 "	struct findresult *r = fsmlist_findnext(yyfsmlist, yyin);\n"
 "	yyleng = r->len; yytext = yyin;\n"
-"	yyin += yyleng; \n"
+"	yyin += yyleng;\n"
 "	if (yyleng == 0) {\n"
 "		assert(*yyin == '\\0');\n"
 "		return 0;\n"
@@ -116,9 +117,15 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 	for (int i = 0; i < ntok; i++) {
 		char *els = i == 0 ? "" : "} else ";
 		struct token tk = tokens[i];
-		fprintf(out,
-"	%sif (strcmp(r->fsm, \"%s\") == 0) {\n"
-"		%s\n", els, tk.name, tk.action);
+		if (i == 0) {
+			fprintf(out,
+"	if (strcmp(r->fsm, \"%s\") == 0) {\n"
+"		%s\n", tk.name, tk.action);
+		} else {
+			fprintf(out,
+"	} else if (strcmp(r->fsm, \"%s\") == 0) {\n"
+"		%s\n", tk.name, tk.action);
+		}
 	}
 	fprintf(out,
 "	}\n"
@@ -130,28 +137,30 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 void
 gen(FILE *out, struct lexer *lx, bool imports)
 {
-	fprintf(out, "\n/* BEGIN */\n\n");
-
+	fprintf(out,
+"/* BEGIN */\n"
+"\n");
 	if (imports) {
-		fprintf(out, "/* BEGIN lex_gen.c */\n");
+		fprintf(out,
+"/* BEGIN lex_gen.c */\n");
 		gen_imports(out);
-		fprintf(out, "/* END lex_gen.c */\n");
+		fprintf(out,
+"/* END lex_gen.c */\n");
 	}
-
-	/* preamble */
-	fprintf(out, "/* BEGIN preamble */\n");
-	fprintf(out, "%s\n", lx->pre);
-	fprintf(out, "/* END preamble */\n");
-
-	/* lexer proper */
-	fprintf(out, "/* BEGIN lexer */\n");
+	fprintf(out,
+"/* BEGIN preamble */\n"
+"%s\n"
+"/* END preamble */\n", lx->pre);
+	fprintf(out,
+"/* BEGIN lexer */\n");
 	yylex(out, lx->patterns, lx->npat, lx->tokens, lx->ntok);
-	fprintf(out, "/* END lexer */\n");
-
-
-	fprintf(out, "/* BEGIN postamble */\n");
-	fprintf(out, "%s\n", lx->post);
-	fprintf(out, "/* END postamble */\n");
-
-	fprintf(out, "\n/* END */\n");
+	fprintf(out,
+"/* END lexer */\n");
+	fprintf(out,
+"/* BEGIN postamble */\n"
+"%s\n"
+"/* END postamble */\n", lx->post);
+	fprintf(out,
+"\n"
+"/* END */\n");
 }
