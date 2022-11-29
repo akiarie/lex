@@ -21,17 +21,56 @@ void
 run()
 {
 	struct pattern patterns[] = {
-		{"vowel", "[aeiou]"},
-		{"vowelb", "{vowel}b"},
+		{"float", "float"},
+		{"other", "[a-zA-Z0-9 \\n]"},
 	};
 	struct token tokens[] = {
-		{true,	"ab",		"/* action for ab */"},
-		{false,	"vowelb",	"/* action for vowelb */"},
-		{false,	"vowel",	"/* action for vowel */"},
+		{false,	"float",	"printf(\"double\");"},
+		{false,	"other",	"printyy();"},
 	};
-	struct lexer *lx = lexer_create(dynamic_name("/* preamble */"),
-		dynamic_name("/* postamble */"), patterns, LEN(patterns),
-		tokens, LEN(tokens));
+	struct lexer *lx = lexer_create(
+		dynamic_name(
+"\n"
+"#include<stdio.h>\n"
+"\n"
+"void printyy();\n"
+"\n"
+"\n"),
+		dynamic_name(
+"\n"
+"void printyy()\n"
+"{\n"
+"	printf(\"%.*s\", (int) yyleng, yytext);\n"
+"}\n"
+"\n"
+"/* read_file: reads contents of file and returns them\n"
+" * caller must free returned string \n"
+" * see https://stackoverflow.com/a/14002993 */\n"
+"char* read_file(char *path)\n"
+"{\n"
+"    FILE *f = fopen(path, \"rb\");\n"
+"    fseek(f, 0, SEEK_END);\n"
+"    long fsize = ftell(f);\n"
+"    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */\n"
+"    char *str = malloc(fsize + 1);\n"
+"    fread(str, fsize, 1, f);\n"
+"    fclose(f);\n"
+"    str[fsize] = '\\0';\n"
+"    return str;\n"
+"}\n"
+"\n"
+"int main(int argc, char* argv[])\n"
+"{\n"
+"	if (argc != 2) {\n"
+"		perror(\"must supply input file\");\n"
+"		exit(1);\n"
+"	}\n"
+"	char *infile = read_file(argv[1]);\n"
+"	yy_scan_string(infile);\n"
+"	free(infile);\n"
+"	yylex(); \n"
+"}\n"),
+		patterns, LEN(patterns), tokens, LEN(tokens));
 	gen(stdout, lx, true);
 	lexer_destroy(lx);
 }

@@ -1,5 +1,6 @@
 #ifndef LEX_AUTOMATA
 #define LEX_AUTOMATA
+#include<stdlib.h>
 #include<stdbool.h>
 
 /* edge */

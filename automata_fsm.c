@@ -341,29 +341,16 @@ fsmlist_destroy(struct fsmlist *l)
 }
 
 static struct fsmlist *
-fsmlist_copy(struct fsmlist *l)
-{
-	struct fsmlist *m = fsmlist_create(
-		dynamic_name(l->name), fsm_copy(l->s));
-	if (l->next != NULL) {
-		m->next = fsmlist_copy(l->next);
-	}
-	return m;
-}
-
-static struct fsmlist *
 fsmlist_sim(struct fsmlist *l, char c)
 {
-	struct fsmlist *m = fsmlist_copy(l);
-	struct fsmlist *result = NULL;
-	for (struct fsmlist *n = m; n != NULL; n = n->next) {
-		struct fsm *s = fsm_sim(n->s, c);
+	struct fsmlist *m = NULL;
+	for (struct fsmlist *n = l; n != NULL; n = n->next) {
+		struct fsm *s = fsm_sim(fsm_copy(n->s), c);
 		if (s != NULL) {
-			result = fsmlist_append(result, n->name, s);
+			m = fsmlist_append(m, n->name, s);
 		}
 	}
-	fsmlist_destroy(m);
-	return result;
+	return m;
 }
 
 static char *

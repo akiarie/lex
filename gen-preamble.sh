@@ -1,6 +1,5 @@
 #!/bin/sh
-cat automata.h automata_util.c automata_fsm.c automata.c \
-	| grep -v '#include "automata.h"' - \
-	| grep -v '#include "automata_fsm.c"' - \
-	| grep -v '#include "automata_util.c"' - \
+cat thompson.h thompson.c automata.h automata_util.c automata_fsm.c automata.c \
+	parse.h parse.c \
+	| grep -v '#include "\(thompson\|automata\|parse\).h\|automata_\(fsm\|util\).c"' - \
 	| xxd -name lex_gen_file -i -

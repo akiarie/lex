@@ -36,8 +36,8 @@ static void
 yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
 {
 	fprintf(out,
-"struct pattern *yyfsmlist = NULL;\n"
-"unsigned long *yyleng = 0;\n"
+"struct fsmlist *yyfsmlist = NULL;\n"
+"unsigned long yyleng = 0;\n"
 "char *yytext = NULL;\n"
 "\n"
 "static void\n"
@@ -53,7 +53,7 @@ yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
 "	};\n"
 "	for (int i = 0; i < %lu; i++) {\n", len);
 	fprintf(out,
-"		struct fsm *s = fsm_fromstring(p[i].regex, yyfsmlist);\n"
+"		struct fsm *s = fsm_fromstring(p[i].pattern, yyfsmlist);\n"
 "		yyfsmlist = fsmlist_append(yyfsmlist, p[i].name, s);\n"
 "	};\n"
 "}\n");
@@ -103,6 +103,11 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 "	}\n"
 "	struct findresult *r = fsmlist_findnext(yyfsmlist, yyin);\n"
 "	yyleng = r->len; yytext = yyin;\n"
+"	yyin += yyleng; \n"
+"	if (r->fsm == NULL) {\n"
+"		fprintf(stderr, \"unmatched '%%.*s'\\n\", (int) yyleng, yytext);\n"
+"		exit(1);\n"
+"	}\n"
 "	if (yyleng == 0) {\n"
 "		assert(yyin == '\\0');\n"
 "		return 0;\n"
@@ -117,13 +122,8 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 	}
 	fprintf(out,
 "	}\n"
-"	/* recurse if no action on match */"
-"	if (r->fsm != NULL) {\n"
-"		return yylex();\n"
-"	}\n"
-"	/* otherwise there must be an error */\n"
-"	fprintf(stderr, \"unmatched sequence '%%.*s'\", (int) yyleng, yytext);\n"
-"	exit(1);\n"
+"	/* recurse if no return-action above */\n"
+"	return yylex();\n"
 "}\n");
 }
 

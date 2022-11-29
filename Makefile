@@ -16,7 +16,7 @@ parse.o: parse.h automata.h
 	$(CC) -c parse.c
 
 # avails the automata library so that util can generate code that refers to it
-lex_gen.c: automata.h $(AUTOMATA_SRC)
+lex_gen.c: automata.h gen-preamble.sh $(AUTOMATA_SRC)
 	@./gen-preamble.sh > $@
 
 gen.o: gen.c lex_gen.c gen.h
