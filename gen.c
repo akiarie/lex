@@ -104,15 +104,15 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 "	struct findresult *r = fsmlist_findnext(yyfsmlist, yyin);\n"
 "	yyleng = r->len; yytext = yyin;\n"
 "	yyin += yyleng; \n"
+"	if (yyleng == 0) {\n"
+"		assert(*yyin == '\\0');\n"
+"		return 0;\n"
+"	}\n"
 "	if (r->fsm == NULL) {\n"
 "		fprintf(stderr, \"unmatched '%%.*s'\\n\", (int) yyleng, yytext);\n"
 "		exit(1);\n"
 "	}\n"
-"	if (yyleng == 0) {\n"
-"		assert(yyin == '\\0');\n"
-"		return 0;\n"
-"	}\n"
-"	/* ⊢ yyleng > 0 */\n");
+"	/* ⊢ r->fsm != NULL && yyleng > 0 */\n");
 	for (int i = 0; i < ntok; i++) {
 		char *els = i == 0 ? "" : "} else ";
 		struct token tk = tokens[i];
