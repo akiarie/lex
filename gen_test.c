@@ -40,12 +40,12 @@ void
 run()
 {
 	struct pattern patterns[] = {
-		{"float", "float"},
-		{"other", "[a-zA-Z0-9 \\n]"},
+		{"float",	"float"},
+		{"other",	"[a-zA-Z0-9 \\n]"},
 	};
 	struct token tokens[] = {
-		{false,	"float",	"printf(\"double\");"},
-		{false,	"other",	"printyy();"},
+		{"float",	"printf(\"double\");"},
+		{"other",	"printyy();"},
 	};
 	struct lexer *lx = lexer_create(
 		dynamic_name(

@@ -185,18 +185,126 @@ parse_defs(char *pos)
 	};
 }
 
+static struct token *
+token_create(char *name, char *action)
+{
+	struct token *tk = (struct token *) malloc(sizeof(struct token));
+	tk->name = name;
+	tk->action = action;
+	return tk;
+}
+
+static struct stringresult
+parse_action(char *input)
+{
+	if (*input != '{') {
+		fprintf(stderr, "action must begin with '{' but has '%.*s\n",
+			10, input);
+		exit(1);
+	}
+	input++; /* skip '{' */
+	char *pos = input;
+	for (; *pos != '}'; pos++) {}
+	return (struct stringresult){
+		substr(input, pos - input),
+		pos + 1,
+	};
+
+}
+
+static struct stringresult
+parse_token_id(char *pos)
+{
+	char *id = parse_id(++pos); /* skip '{' */
+	pos += strlen(id);
+	if (*pos != '}') {
+		fprintf(stderr, "token id must end in '}' but has '%.*s\n'", 5,
+			pos);
+		exit(1);
+	}
+	return (struct stringresult){id, pos + 1}; /* '}' */
+}
+
+static struct stringresult
+parse_token_literal(char *input)
+{
+	input++; /* skip '"' */
+	char *pos = input;
+	for (pos++; *pos != '"'; pos++) {}
+	return (struct stringresult){
+		substr(input, pos - input),
+		pos + 1,
+	};
+}
+
+static struct stringresult
+parse_token_pattern(char *pos)
+{
+	char *id = parse_id(pos);
+	return (struct stringresult){id, pos + strlen(id)};
+}
+
 struct tokenresult {
+	struct token *tk;
+	char *pos;
+};
+
+typedef struct stringresult (*nameparser)(char *);
+
+static nameparser
+choose_nameparser(char *pos)
+{
+	switch (*pos) {
+	case '{':
+		return &parse_token_id;
+	case '"':
+		return &parse_token_literal;
+	default:
+		return &parse_token_pattern;
+	}
+}
+
+static struct tokenresult
+parse_token(char *pos)
+{
+	struct stringresult nameres = choose_nameparser(pos)(pos);
+	struct stringresult actionres = parse_action(skiplinespace(nameres.pos));
+	return (struct tokenresult){
+		token_create(nameres.s, actionres.s),
+		actionres.pos,
+	};
+}
+
+struct rulesresult {
 	struct token *tokens;
 	size_t ntok;
 	char *pos;
 };
 
-static struct tokenresult
+static struct rulesresult
 parse_rules(char *pos)
 {
-	printf("before rules: %.*s\n", 10, pos);
-	fprintf(stderr, "parse_rules NOT IMPLEMENTED\n");
-	exit(1);
+	size_t ntok = 0;
+	struct token *tokens = NULL;
+	for (; *pos != '\0' && strncmp(pos, "%%", 2) != 0 ; ntok++) {
+		struct tokenresult res = parse_token(pos);
+		pos = res.pos;
+		tokens = (struct token *)
+			realloc(tokens, sizeof(struct token) * (ntok + 1));
+		tokens[ntok] = *res.tk;
+		pos = skipws(pos);
+	}
+	return (struct rulesresult){tokens, ntok, pos};
+}
+
+static char *
+parse_toeof(char *input)
+{
+	char *s = input;
+	while (*s != '\0') {
+		s++;
+	}
+	return substr(input, s - input);
 }
 
 struct lexer *
@@ -210,6 +318,13 @@ parse(char *pos)
 		exit(1);
 	}
 	pos = skipws(pos + 2); /* %% */
-	struct tokenresult res = parse_rules(pos);
-	return NULL;
+	struct rulesresult res = parse_rules(pos);
+	pos = res.pos;
+	char *post = "";
+	if (strncmp(pos, "%%", 2) == 0) {
+		pos += 2;
+		post = parse_toeof(pos);
+	}
+	return lexer_create(def.pre, post, def.patterns, def.npat, res.tokens,
+		res.ntok);
 }

@@ -6,7 +6,7 @@
 struct terminal;
 
 struct pattern { char *name, *pattern; };
-struct token { bool literal; char *name, *action; };
+struct token { char *name, *action; };
 
 struct lexer {
 	char *pre, *post;
@@ -41,8 +41,8 @@ lexer_destroy(struct lexer *);
  *
  *	rules		→ pattern { raw } '\n' rules
  *			| ε
- *	pattern		→ {·id·}
- *			| id
+ *	pattern		→ id
+ *			| {·id·}
  *			| "·string·"	(string potentially containing symbols)
  *
  *	raw		→ .* (until end of environment EOF, '}', '}%', etc.)
