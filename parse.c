@@ -155,19 +155,18 @@ parse_defsproper(char *pos)
 			realloc(patterns, sizeof(struct pattern) * (npat + 1));
 		patterns[npat] = *res.p;
 		pos = skipws(pos);
-		printf("pattern: %s, %s\n", res.p->name, res.p->pattern);
 	}
-	fprintf(stderr, "parse_defsproper NOT IMPLEMENTED\n");
-	exit(1);
+	return (struct patternset){patterns, npat, pos};
 }
 
-static struct {
+struct defsresult {
 	char *pre;
 	struct pattern *patterns;
 	size_t npat;
-} defs;
+	char *pos;
+};
 
-static char *
+static struct defsresult
 parse_defs(char *pos)
 {
 	pos = skipws(pos);
@@ -176,24 +175,41 @@ parse_defs(char *pos)
 		exit(1);
 	}
 	struct stringresult raw = parse_defsraw(pos);
-	defs.pre = raw.s;
 	pos = raw.pos;
 	pos = skipws(pos);
 	pos = skipoptions(pos);
 	pos = skipws(pos);
 	struct patternset set = parse_defsproper(pos);
-	defs.patterns = set.patterns;
-	defs.npat = set.npat;
-	return set.pos;
+	return (struct defsresult){
+		raw.s, set.patterns, set.npat, set.pos,
+	};
+}
+
+struct tokenresult {
+	struct token *tokens;
+	size_t ntok;
+	char *pos;
+};
+
+static struct tokenresult
+parse_rules(char *pos)
+{
+	printf("before rules: %.*s\n", 10, pos);
+	fprintf(stderr, "parse_rules NOT IMPLEMENTED\n");
+	exit(1);
 }
 
 struct lexer *
-parse(char *input)
+parse(char *pos)
 {
-	char *pos = parse_defs(input);
-	for (int i = 0; i < defs.npat; i++) {
-		struct pattern p = defs.patterns[i];
-		printf("%s\t%s\n", p.name, p.pattern);
+	struct defsresult def = parse_defs(pos);
+	pos = def.pos;
+	if (strncmp(pos, "%%", 2) != 0) {
+		fprintf(stderr, "invalid transition to rules: '%.*s'\n", 10,
+			pos);
+		exit(1);
 	}
+	pos = skipws(pos + 2); /* %% */
+	struct tokenresult res = parse_rules(pos);
 	return NULL;
 }
