@@ -6,7 +6,7 @@
 struct terminal;
 
 struct pattern { char *name, *pattern; };
-struct token { char *name, *action; };
+struct token { bool literal; char *name, *action; };
 
 struct lexer {
 	char *pre, *post;

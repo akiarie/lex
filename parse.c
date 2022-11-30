@@ -186,9 +186,10 @@ parse_defs(char *pos)
 }
 
 static struct token *
-token_create(char *name, char *action)
+token_create(bool literal, char *name, char *action)
 {
 	struct token *tk = (struct token *) malloc(sizeof(struct token));
+	tk->literal = literal;
 	tk->name = name;
 	tk->action = action;
 	return tk;
@@ -212,7 +213,13 @@ parse_action(char *input)
 
 }
 
-static struct stringresult
+struct tknameresult {
+	bool literal;
+	char *name;
+	char *pos;
+};
+
+static struct tknameresult
 parse_token_id(char *pos)
 {
 	char *id = parse_id(++pos); /* skip '{' */
@@ -222,26 +229,27 @@ parse_token_id(char *pos)
 			pos);
 		exit(1);
 	}
-	return (struct stringresult){id, pos + 1}; /* '}' */
+	return (struct tknameresult){false, id, pos + 1}; /* '}' */
 }
 
-static struct stringresult
+static struct tknameresult
 parse_token_literal(char *input)
 {
 	input++; /* skip '"' */
 	char *pos = input;
 	for (pos++; *pos != '"'; pos++) {}
-	return (struct stringresult){
+	return (struct tknameresult){
+		true,
 		substr(input, pos - input),
 		pos + 1,
 	};
 }
 
-static struct stringresult
+static struct tknameresult
 parse_token_pattern(char *pos)
 {
 	char *id = parse_id(pos);
-	return (struct stringresult){id, pos + strlen(id)};
+	return (struct tknameresult){true, id, pos + strlen(id)};
 }
 
 struct tokenresult {
@@ -249,7 +257,7 @@ struct tokenresult {
 	char *pos;
 };
 
-typedef struct stringresult (*nameparser)(char *);
+typedef struct tknameresult (*nameparser)(char *);
 
 static nameparser
 choose_nameparser(char *pos)
@@ -267,10 +275,10 @@ choose_nameparser(char *pos)
 static struct tokenresult
 parse_token(char *pos)
 {
-	struct stringresult nameres = choose_nameparser(pos)(pos);
+	struct tknameresult nameres = choose_nameparser(pos)(pos);
 	struct stringresult actionres = parse_action(skiplinespace(nameres.pos));
 	return (struct tokenresult){
-		token_create(nameres.s, actionres.s),
+		token_create(nameres.literal, nameres.name, actionres.s),
 		actionres.pos,
 	};
 }

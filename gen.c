@@ -13,7 +13,7 @@ static void
 gen_imports(FILE *out)
 {
 	for (int i = 0; i < lex_gen_file_len; i++) {
-		putchar(lex_gen_file[i]);
+		fputc(lex_gen_file[i], out);
 	}
 }
 
