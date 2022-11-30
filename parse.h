@@ -49,8 +49,7 @@ lexer_destroy(struct lexer *);
  *	id		→ letter (letter | digit)*
  *	meta		→ '\n%%\n'
  *	leftmeta	→ '\n%{\n'
- *	rightmeta	→ '\n}%\n'
- */
+ *	rightmeta	→ '\n}%\n' */
 struct lexer *
 parse(struct terminal *terminals, int len);
 
