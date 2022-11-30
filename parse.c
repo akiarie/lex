@@ -26,7 +26,7 @@ lexer_destroy(struct lexer *lx)
 }
 
 struct lexer *
-parse(struct terminal *terminals, int len)
+parse(char *input)
 {
 	return NULL;
 }

@@ -1,5 +1,5 @@
 CC = cc -g
-OBJECTS = gen.o thompson.o automata.o selflex.o parse.o
+OBJECTS = gen.o thompson.o automata.o parse.o
 
 lex: $(OBJECTS)
 	$(CC) -o $@ main.o $(OBJECTS)
@@ -11,9 +11,6 @@ AUTOMATA_SRC = automata.c automata_fsm.c automata_util.c
 
 automata.o: automata.h $(AUTOMATA_SRC) thompson.h
 	$(CC) -c automata.c
-
-selflex.o: selflex.h
-	$(CC) -c selflex.c
 
 parse.o: parse.h automata.h
 	$(CC) -c parse.c
@@ -37,13 +34,13 @@ automata_test: automata_test.c $(OBJECTS)
 gen_test: gen_test.c lex_gen.c gen_test_gen.c $(OBJECTS)
 	$(CC) -o $@ gen_test.c $(OBJECTS)
 
-selflex_test: selflex_test.c $(OBJECTS)
-	$(CC) -o $@ selflex_test.c $(OBJECTS)
+parse_test: parse_test.c $(OBJECTS)
+	$(CC) -o $@ parse_test.c $(OBJECTS)
 
 example: lex
 	@cd examples; ../lex lex.l
 
-check: thompson_test automata_test gen_test selflex_test
+check: thompson_test automata_test gen_test parse_test
 	@./run-tests.sh
 
 clean-tests: 
