@@ -12,7 +12,7 @@ AUTOMATA_SRC = automata.c automata_fsm.c automata_util.c
 automata.o: automata.h $(AUTOMATA_SRC) thompson.h
 	$(CC) -c automata.c
 
-parse.o: parse.h automata.h
+parse.o: parse.c parse.h automata.h
 	$(CC) -c parse.c
 
 # avails the automata library so that util can generate code that refers to it

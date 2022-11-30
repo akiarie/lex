@@ -8,6 +8,8 @@ void printyy();
 
 %}
 
+%option noyywrap
+
 delim		[ \t\n]
 ws 		{delim}+
 letter		[A-Za-z]
@@ -26,17 +28,17 @@ cword		{cons}{letter}*
 
 void printyy()
 {
-	printf("%.*s", (int)yyleng, yytext);
+	printf("%.*s", (int) yyleng, yytext);
 }
 
 void printvowel()
 {
-	printf("%.*say", (int)yyleng, yytext);
+	printf("%.*say", (int) yyleng, yytext);
 }
 
 void printcons()
 {
-	printf("%.*s%cay", (int)yyleng, yytext+1, *yytext);
+	printf("%.*s%cay", (int) yyleng, yytext + 1, *yytext);
 }
 
 int main(int argc, char* argv[])
