@@ -24,3 +24,9 @@ lexer_destroy(struct lexer *lx)
 	free(lx->post);
 	free(lx);
 }
+
+struct lexer *
+parse(struct terminal *terminals, int len)
+{
+	return NULL;
+}
