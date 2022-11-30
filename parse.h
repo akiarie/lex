@@ -27,7 +27,7 @@ lexer_destroy(struct lexer *);
  * grammar:
  *
  *	file		→ defs meta rules subs
- *	postscript	→ meta raw
+ *	subs		→ meta raw
  *			| ε
  *
  *	defs		→ defsraw options defsproper

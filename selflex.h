@@ -11,6 +11,12 @@ struct terminal {
 };
 
 void
+terminal_print(struct terminal *);
+
+void
+terminal_destroy(struct terminal *);
+
+void
 lex_string(struct terminal **terminals, int *len, char *input);
 
 #endif
