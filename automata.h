@@ -60,6 +60,9 @@ struct fsmlist {
 void
 fsmlist_destroy(struct fsmlist *);
 
+struct fsm *
+fsmlist_findfsm(struct fsmlist *, char *name);
+
 struct fsmlist *
 fsmlist_append(struct fsmlist *, char *, struct fsm *);
 

@@ -313,6 +313,18 @@ fsmlist_tail(struct fsmlist *l)
 	return l;
 }
 
+
+struct fsm *
+fsmlist_findfsm(struct fsmlist *l, char *name)
+{
+	for (; l != NULL; l = l->next) {
+		if (strcmp(l->name, name) == 0) {
+			return l->s;
+		}
+	}
+	return NULL;
+}
+
 struct fsmlist *
 fsmlist_append(struct fsmlist *l, char *name, struct fsm *s)
 {

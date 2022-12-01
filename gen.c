@@ -33,9 +33,37 @@ yyin(FILE *out)
 }
 
 static void
-yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
+fprintliteral(FILE *out, char *s)
+{
+	int len = strlen(s);
+	fprintf(out, "(char []){");
+	for (int i = 0; i < len; i++) {
+		fprintf(out, "%d,", s[i]);
+	}
+	fprintf(out, "'\\0'} /* %s */", s);
+}
+
+static void
+yyfsmlistprep(FILE *out, struct pattern *p, size_t npat, struct token *t,
+		size_t ntok)
 {
 	fprintf(out,
+"static struct fsm *\n"
+"gettokenfsm(struct token *t, struct fsmlist *l)\n"
+"{\n"
+"	if (t->literal) {\n"
+"		/* TODO: create token */\n"
+"		fprintf(stderr, \"literal tokens NOT IMPLEMENTED\\n\");\n"
+"		exit(1);\n"
+"	}\n"
+"	struct fsm *s = fsmlist_findfsm(l, t->name);\n"
+"	if (NULL == s) {\n"
+"		fprintf(stderr, \"cannot find pattern for '%%s'\\n\", t->name);\n"
+"		exit(1);\n"
+"	}\n"
+"	return fsm_copy(s);\n"
+"}\n"
+"\n"
 "struct fsmlist *yyfsmlist = NULL;\n"
 "unsigned long yyleng = 0;\n"
 "char *yytext = NULL;\n"
@@ -45,17 +73,34 @@ yyfsmlistprep(FILE *out, struct pattern *p, size_t len)
 "{\n");
 	fprintf(out,
 "	struct pattern p[] = {\n");
-	for (int i = 0; i < len; i++) {
+	for (int i = 0; i < npat; i++) {
 		fprintf(out,
-"		{\"%s\",	\"%s\"},\n", p[i].name, p[i].pattern);
+"		{\"%s\",\t", p[i].name);
+		fprintliteral(out, p[i].pattern);
+		fprintf(out, "},\n");
 	}
 	fprintf(out,
 "	};\n"
-"	for (int i = 0; i < %lu; i++) {\n", len);
+"	struct fsmlist *l = NULL;\n"
+"	for (int i = 0; i < %lu; i++) {\n", npat);
 	fprintf(out,
-"		struct fsm *s = fsm_fromstring(p[i].pattern, yyfsmlist);\n"
-"		yyfsmlist = fsmlist_append(yyfsmlist, p[i].name, s);\n"
+"		struct fsm *s = fsm_fromstring(p[i].pattern, l);\n"
+"		l = fsmlist_append(l, p[i].name, s);\n"
 "	};\n"
+"	struct token t[] = {\n");
+	for (int i = 0; i < ntok; i++) {
+		fprintf(out,
+"		{%s,\t\"%s\",\t", (t[i].literal ? "true" : "false"), t[i].name);
+		fprintliteral(out, t[i].action);
+		fprintf(out, "},\n");
+	}
+	fprintf(out,
+"	};\n"
+"	for (int i = 0; i < %lu; i++) {\n", ntok);
+	fprintf(out,
+"		yyfsmlist = fsmlist_append(yyfsmlist, t[i].name, gettokenfsm(&t[i], l));\n"
+"	};\n"
+"	fsmlist_destroy(l);\n"
 "}\n");
 }
 
@@ -70,29 +115,13 @@ tokens_hasname(struct token *tokens, size_t len, char *name)
 	return false;
 }
 
-/* confirmintegrity: confirms every fsm in l has a matching token in tokens */
 static void
-confirmintegrity(struct pattern *patterns, size_t npat, struct token *tokens,
-		size_t ntok)
+yylex(FILE *out, struct pattern *p, size_t npat, struct token *t, size_t ntok)
 {
-	for (int i = 0; i < npat; i++) {
-		char *name = patterns[i].name;
-		if (!tokens_hasname(tokens, ntok, name)) {
-			fprintf(stderr, "'%s' not in tokens\n", name);
-			exit(1);
-		}
-	}
-}
-
-static void
-yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
-		size_t ntok)
-{
-	confirmintegrity(patterns, npat, tokens, ntok);
 	yyin(out);
 	fprintf(out,
 "\n");
-	yyfsmlistprep(out, patterns, npat);
+	yyfsmlistprep(out, p, npat, t, ntok);
 	fprintf(out,
 "\n"
 "int\n"
@@ -116,7 +145,7 @@ yylex(FILE *out, struct pattern *patterns, size_t npat, struct token *tokens,
 "	/* ⊢ r->fsm != NULL && yyleng > 0 */\n");
 	for (int i = 0; i < ntok; i++) {
 		char *els = i == 0 ? "" : "} else ";
-		struct token tk = tokens[i];
+		struct token tk = t[i];
 		if (i == 0) {
 			fprintf(out,
 "	if (strcmp(r->fsm, \"%s\") == 0) {\n"

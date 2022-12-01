@@ -52,10 +52,9 @@ main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "o:")) != -1) {
 		switch (opt) {
 			case 'o':
-				printf("updating arg to %s\n", optarg);
 				output = optarg;
 				break;
-			default: /* '?' */
+			default:
 				fprintf(stderr, "Usage: %s [-o output] lex.l\n", argv[0]);
 				exit(1);
 		}
