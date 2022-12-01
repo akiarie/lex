@@ -146,8 +146,11 @@ fsm_move_act(struct fsm *, char, struct circuitbreaker *);
 static struct fsmset *
 fsm_reach(struct fsm *s, char c, struct circuitbreaker *tr)
 {
+	struct fsmset *l = fsmset_create();
 	struct circuitbreaker *trnew = circuitbreaker_copy(tr);
-	struct fsmset *l = fsm_move_act(s, c, trnew);
+	if (circuitbreaker_append(trnew, s)) {
+		fsmset_addrange(l, fsm_move_act(s, c, trnew));
+	}
 	circuitbreaker_destroy(trnew);
 	return l;
 }

@@ -40,7 +40,7 @@ fprintliteral(FILE *out, char *s)
 	for (int i = 0; i < len; i++) {
 		fprintf(out, "%d,", s[i]);
 	}
-	fprintf(out, "'\\0'} /* %s */", s);
+	fprintf(out, "0} /* %s */", s);
 }
 
 static void
