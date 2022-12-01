@@ -1,7 +1,7 @@
 CC = cc -g
 OBJECTS = gen.o thompson.o automata.o parse.o
 
-lex: $(OBJECTS)
+lex: main.o
 	$(CC) -o $@ main.o $(OBJECTS)
 
 thompson.o: thompson.c thompson.h
@@ -47,7 +47,7 @@ clean-tests:
 	@rm -f *_test
 
 clean: clean-tests
-	@rm -f lex $(OBJECTS) lex_gen.o *.gch a.out
+	@rm -f lex $(OBJECTS) main.o lex_gen.o *.gch a.out
 	@rm -rf *.dSYM
 	@rm -rf examples/*.yy.c
 	@rm -rf lex_gen.c

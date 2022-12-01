@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <ctype.h>
 
@@ -7,6 +8,7 @@
 #include "gen.h"
 
 #define OUTPUT_FILE "lex.yy.c"
+
 
 /* read_file: reads contents of file and returns them
  * caller must free returned string
@@ -26,14 +28,10 @@ read_file(char *path)
 }
 
 int
-main(int argc, char *argv[])
+runlex(char *inputpath, char *outputpath)
 {
-	if (argc != 2) {
-		fprintf(stderr, "must provide input as string\n");
-		return 1;
-	}
-	char* in = read_file(argv[1]);
-	FILE *out = fopen(OUTPUT_FILE, "w");
+	char* in = read_file(inputpath);
+	FILE *out = fopen(outputpath, "w");
 	if (out == NULL) {
 		fprintf(stderr, "error writing to file\n");
 		return 1;
@@ -43,4 +41,28 @@ main(int argc, char *argv[])
 	lexer_destroy(lx);
 	fclose(out);
 	free(in);
+	return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+	char *output = OUTPUT_FILE;
+	int opt;
+	while ((opt = getopt(argc, argv, "o:")) != -1) {
+		switch (opt) {
+			case 'o':
+				printf("updating arg to %s\n", optarg);
+				output = optarg;
+				break;
+			default: /* '?' */
+				fprintf(stderr, "Usage: %s [-o output] lex.l\n", argv[0]);
+				exit(1);
+		}
+	}
+	if (optind >= argc) {
+		fprintf(stderr, "must provide input as string\n");
+		exit(1);
+	}
+	return runlex(argv[optind], output);
 }
