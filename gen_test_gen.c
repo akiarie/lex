@@ -19,6 +19,22 @@ yy_scan_string(char *s)
 	snprintf(yyin, len, "%s", s);
 }
 
+static struct fsm *
+gettokenfsm(struct token *t, struct fsmlist *l)
+{
+	if (t->literal) {
+		/* TODO: create token */
+		fprintf(stderr, "literal tokens NOT IMPLEMENTED\n");
+		exit(1);
+	}
+	struct fsm *s = fsmlist_findfsm(l, t->name);
+	if (NULL == s) {
+		fprintf(stderr, "cannot find pattern for '%s'\n", t->name);
+		exit(1);
+	}
+	return fsm_copy(s);
+}
+
 struct fsmlist *yyfsmlist = NULL;
 unsigned long yyleng = 0;
 char *yytext = NULL;
@@ -27,13 +43,22 @@ static void
 yyfsmlistprep()
 {
 	struct pattern p[] = {
-		{"float",	"float"},
-		{"other",	"[a-zA-Z0-9 \n]"},
+		{"float",	(char []){102,108,111,97,116,0} /* float */},
+		{"other",	(char []){91,97,45,122,65,45,90,48,45,57,32,92,110,93,0} /* [a-zA-Z0-9 \n] */},
+	};
+	struct fsmlist *l = NULL;
+	for (int i = 0; i < 2; i++) {
+		struct fsm *s = fsm_fromstring(p[i].pattern, l);
+		l = fsmlist_append(l, p[i].name, s);
+	};
+	struct token t[] = {
+		{false,	"float",	(char []){112,114,105,110,116,102,40,34,100,111,117,98,108,101,34,41,59,0} /* printf("double"); */},
+		{false,	"other",	(char []){112,114,105,110,116,121,121,40,41,59,0} /* printyy(); */},
 	};
 	for (int i = 0; i < 2; i++) {
-		struct fsm *s = fsm_fromstring(p[i].pattern, yyfsmlist);
-		yyfsmlist = fsmlist_append(yyfsmlist, p[i].name, s);
+		yyfsmlist = fsmlist_append(yyfsmlist, t[i].name, gettokenfsm(&t[i], l));
 	};
+	fsmlist_destroy(l);
 }
 
 int
