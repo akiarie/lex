@@ -49,7 +49,7 @@ clean-tests:
 clean: clean-tests
 	@rm -f lex $(OBJECTS) main.o lex_gen.o *.gch a.out
 	@rm -rf *.dSYM
-	@rm -rf examples/*.yy.c
+	@rm -rf *.yy.c examples/*.yy.c
 	@rm -rf lex_gen.c
 
 .PHONY: clean clean-tests
