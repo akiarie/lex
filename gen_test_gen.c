@@ -52,8 +52,8 @@ yyfsmlistprep()
 		l = fsmlist_append(l, p[i].name, s);
 	};
 	struct token t[] = {
-		{false,	"float",	(char []){112,114,105,110,116,102,40,34,100,111,117,98,108,101,34,41,59,0} /* printf("double"); */},
-		{false,	"other",	(char []){112,114,105,110,116,121,121,40,41,59,0} /* printyy(); */},
+		{false,	"float",	(char []){112,114,105,110,116,102,40,34,100,111,117,98,108,101,34,41,59,0}},
+		{false,	"other",	(char []){112,114,105,110,116,121,121,40,41,59,0}},
 	};
 	for (int i = 0; i < 2; i++) {
 		yyfsmlist = fsmlist_append(yyfsmlist, t[i].name, gettokenfsm(&t[i], l));

@@ -33,14 +33,17 @@ yyin(FILE *out)
 }
 
 static void
-fprintliteral(FILE *out, char *s)
+fprintliteral(FILE *out, char *s, bool comment)
 {
 	int len = strlen(s);
 	fprintf(out, "(char []){");
 	for (int i = 0; i < len; i++) {
 		fprintf(out, "%d,", s[i]);
 	}
-	fprintf(out, "0} /* %s */", s);
+	fprintf(out, "0}");
+	if (comment) {
+		fprintf(out, " /* %s */", s);
+	}
 }
 
 static void
@@ -76,7 +79,7 @@ yyfsmlistprep(FILE *out, struct pattern *p, size_t npat, struct token *t,
 	for (int i = 0; i < npat; i++) {
 		fprintf(out,
 "		{\"%s\",\t", p[i].name);
-		fprintliteral(out, p[i].pattern);
+		fprintliteral(out, p[i].pattern, true);
 		fprintf(out, "},\n");
 	}
 	fprintf(out,
@@ -91,7 +94,7 @@ yyfsmlistprep(FILE *out, struct pattern *p, size_t npat, struct token *t,
 	for (int i = 0; i < ntok; i++) {
 		fprintf(out,
 "		{%s,\t\"%s\",\t", (t[i].literal ? "true" : "false"), t[i].name);
-		fprintliteral(out, t[i].action);
+		fprintliteral(out, t[i].action, false);
 		fprintf(out, "},\n");
 	}
 	fprintf(out,
