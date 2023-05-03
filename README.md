@@ -1,1 +1,1 @@
-# A Lex that Lexes Itself
+# A Naive Implementation of Lex
