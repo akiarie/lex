@@ -12,3 +12,6 @@ cc lex.yy.c
 ./a.out 'the quick brown fox jumps over the lazy dog'
 he tay uick qay rown bay ox fay umps jay overay he tay azy lay ogday
 ```
+
+I've detailed my experience in building this project
+[here](https://0.rwstream.com/posts/lex/).
