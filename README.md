@@ -1,7 +1,7 @@
 # A Naive Implementation of Lex
 
 The implementation was built for educational purposes, so it doesn't provide
-support for literal tokens.
+support for literal tokens (and many other things).
 
 After running `make`, you should be able to test the example file, which is
 based on the Pig Latin question in the Dragon Book:
