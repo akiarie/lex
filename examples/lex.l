@@ -21,8 +21,6 @@ cword		{cons}{letter}*
 %%
 
 {ws}		{printyy();}
-if		{/* action for if */}
-"<="		{/* action for LE */}
 {vword}		{printvowel();}
 {cword}		{printcons();}
 
